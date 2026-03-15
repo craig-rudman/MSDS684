@@ -106,10 +106,12 @@ This framework directly supports the lab requirements:
 - Sutton & Barto, Chapter 2 — Multi-armed Bandits
 - Sutton & Barto, Chapter 3 — Finite MDPs
 
-## Reference
-Sutton, R. S., & Barto, A. G. (2018). Reinforcement Learning: An Introduction (2nd ed.). The MIT Press. http://incompleteideas.net/book/the-book-2nd.html
+### Reference
 
-bibtex@book{Sutton2018,
+Sutton, R. S., & Barto, A. G. (2018). *Reinforcement Learning: An Introduction* (2nd ed.). The MIT Press. http://incompleteideas.net/book/the-book-2nd.html
+
+```bibtex
+@book{Sutton2018,
   author    = {Sutton, Richard S. and Barto, Andrew G.},
   title     = {Reinforcement Learning: An Introduction},
   edition   = {2nd},
@@ -117,6 +119,7 @@ bibtex@book{Sutton2018,
   year      = {2018},
   url       = {http://incompleteideas.net/book/the-book-2nd.html}
 }
+```
 
 ## Architecture diagram
 
