@@ -2,10 +2,64 @@
 
 This module covers the foundational concepts of reinforcement learning through two complementary assignments. Part 1 builds a custom multi-armed bandit framework to study exploration vs. exploitation, while Part 2 applies those ideas to standard Gymnasium environments (FrozenLake-v1, Taxi-v3) to formalize sequential decision problems as Markov Decision Processes.
 
-## Installation
+## Environment Setup
+
+### Option A — Conda (recommended)
 
 ```bash
+conda env create -f environment.yml
+conda activate msds684-w1
+```
+
+### Option B — venv + pip
+
+```bash
+python -m venv .venv
+source .venv/bin/activate        # macOS / Linux
+# .venv\Scripts\activate         # Windows
 pip install gymnasium numpy matplotlib
+```
+
+## Usage
+
+Both parts can be run from the `W1/` directory using `run.py`.
+
+### Part 1 — Bandit comparison
+
+```bash
+python run.py part1
+```
+
+| Flag | Description | Default |
+|---|---|---|
+| `--k` | Number of arms | `10` |
+| `--steps` | Steps per run | `2000` |
+| `--runs` | Independent runs | `1000` |
+| `--save` | Output path for the plot image | `part_01/img/bandit_comparison.png` |
+| `--show` | Open the plot in an interactive window | off |
+
+### Part 2 — Gymnasium environments
+
+```bash
+python run.py part2
+```
+
+| Flag | Description | Default |
+|---|---|---|
+| `--episodes` | Episodes per environment | `1000` |
+| `--show` | Open plots in an interactive window | off |
+
+### Examples
+
+```bash
+# Run Part 1 with defaults and display the plot
+python run.py part1 --show
+
+# Run Part 1 with custom parameters
+python run.py part1 --k 5 --steps 500 --runs 200 --save my_plot.png
+
+# Run Part 2 and display plots
+python run.py part2 --episodes 2000 --show
 ```
 
 ## Part 1 — Multi-Armed Bandit Framework
