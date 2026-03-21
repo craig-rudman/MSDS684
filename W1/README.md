@@ -69,27 +69,31 @@ A Python framework for running multi-armed bandit simulations using [Gymnasium](
 ### Quick start
 
 ```python
-from part_01.src.factories import make_bandit_env, make_agent
-from part_01.src.runner import run_simulation
-from part_01.src.plotting import plot_comparison
+from part_01.src.factories import BanditFactory
+from part_01.src.runner import BanditSimulator
+from part_01.src.plotting import BanditPlotter
 
 # Create a 10-armed Gaussian bandit (means re-sampled each run)
-env = make_bandit_env(k=10, dist="gaussian", randomize=True, max_steps=2000)
+env = BanditFactory.make_bandit_env(k=10, randomize=True, max_steps=2000)
 
 # Set up agents with different parameter settings
 agents = [
-    make_agent("epsilon_greedy", k=10, epsilon=0.01),
-    make_agent("epsilon_greedy", k=10, epsilon=0.1),
-    make_agent("epsilon_greedy", k=10, epsilon=0.2),
-    make_agent("ucb", k=10, c=1.0),
-    make_agent("ucb", k=10, c=2.0),
+    BanditFactory.make_agent("epsilon_greedy", k=10, epsilon=0.01),
+    BanditFactory.make_agent("epsilon_greedy", k=10, epsilon=0.1),
+    BanditFactory.make_agent("epsilon_greedy", k=10, epsilon=0.2),
+    BanditFactory.make_agent("ucb", k=10, c=1.0),
+    BanditFactory.make_agent("ucb", k=10, c=2.0),
 ]
 
 # Run 1000 independent runs of 2000 steps each
-results = [run_simulation(env, agent, n_runs=1000) for agent in agents]
+results = []
+for agent in agents:
+    sim = BanditSimulator(env, agent)
+    results.append(sim.run(n_runs=1000, agent_name=agent.agent_name))
 
 # Plot average reward and optimal action percentage
-plot_comparison(results, panels=["reward", "optimal_pct"])
+plotter = BanditPlotter(results, smoothing=20)
+plotter.plot_comparison(panels=["reward", "optimal_pct"])
 ```
 
 ### Architecture
@@ -100,49 +104,55 @@ plot_comparison(results, panels=["reward", "optimal_pct"])
 - `EpsilonGreedyAgent` — exploits the best-known arm, explores randomly with probability ε
 - `UCBAgent` — selects arms using Upper Confidence Bound with confidence parameter c
 
-**Simulation runner** — `run_simulation(env, agent, n_runs)` runs multiple independent episodes, collecting per-step rewards, optimal action flags, and cumulative regret into a `SimulationResult`. Call `summary()` for a dict of final metrics.
+**Simulation runner** — `BanditSimulator` takes an environment and agent, then `run(n_runs)` executes multiple independent episodes, collecting per-step rewards, optimal action flags, and cumulative regret into a `SimulationResult`. Call `summary()` for a dict of final metrics.
 
-**Visualization** — `plot_comparison(results, panels)` produces a matplotlib figure with configurable panels: `"reward"`, `"optimal_pct"`, and/or `"regret"`.
+**Visualization** — `BanditPlotter` holds a list of `SimulationResult` objects and a smoothing window. `plot_comparison(panels)` produces a multi-panel figure, `plot_panel(panel)` plots a single metric, and the static `plot_reward_distributions(env)` renders a violin plot of arm reward distributions. Configurable panels: `"reward"`, `"optimal_pct"`, and/or `"regret"`.
 
 ### API reference
 
-#### Factory functions
+#### BanditFactory
 
 ```python
 # Shorthand: randomized Gaussian testbed
-env = make_bandit_env(k=10, dist="gaussian", randomize=True, max_steps=2000)
+env = BanditFactory.make_bandit_env(k=10, randomize=True, max_steps=2000)
 
 # Custom: explicit arm configs
-env = make_bandit_env(arms=[
-    {"dist": "gaussian", "mu": 1.0, "sigma": 0.5},
-    {"dist": "gaussian", "mu": 2.0, "sigma": 1.0},
+env = BanditFactory.make_bandit_env(arms=[
+    {"mu": 1.0, "sigma": 0.5},
+    {"mu": 2.0, "sigma": 1.0},
 ], max_steps=2000)
 
 # Agent factory (auto-generates descriptive names for plot legends)
-agent = make_agent("epsilon_greedy", k=10, epsilon=0.1)
-agent = make_agent("ucb", k=10, c=2.0)
+agent = BanditFactory.make_agent("epsilon_greedy", k=10, epsilon=0.1)
+agent = BanditFactory.make_agent("ucb", k=10, c=2.0)
 ```
 
-#### SimulationResult
+#### BanditSimulator / SimulationResult
 
 ```python
-result = run_simulation(env, agent, n_runs=1000)
+sim = BanditSimulator(env, agent)
+result = sim.run(n_runs=1000, agent_name=agent.agent_name)
 
 result.agent_name            # "ε-greedy (ε=0.1)"
 result.mean_reward()         # ndarray, per-step average across runs
 result.optimal_action_pct()  # ndarray, per-step % optimal action
 result.cumulative_regret()   # ndarray, per-step average cumulative regret
-result.summary()             # {"agent_name": ..., "final_regret": ..., "final_optimal_pct": ...}
+result.summary()             # {"agent_name": ..., "final_cumulative_regret": ..., "final_optimal_pct": ...}
 ```
 
-#### Plotting
+#### BanditPlotter
 
 ```python
-# Show only reward and optimal action %
-plot_comparison(results, panels=["reward", "optimal_pct"])
+plotter = BanditPlotter(results, smoothing=20)
 
-# Show all three panels
-plot_comparison(results, panels=["reward", "optimal_pct", "regret"])
+# Multi-panel comparison
+plotter.plot_comparison(panels=["reward", "optimal_pct"])
+
+# Single panel
+plotter.plot_panel("regret", save_path="regret.png")
+
+# Arm reward distributions (static method)
+BanditPlotter.plot_reward_distributions(env, n_samples=1000)
 ```
 
 ### Class diagram
