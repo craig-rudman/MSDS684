@@ -95,3 +95,56 @@ def plot_comparison(
         plt.savefig(save_path, dpi=150, bbox_inches="tight")
 
     return fig
+
+
+def plot_reward_distributions(
+    env,
+    n_samples: int = 1000,
+    figsize: tuple = (10, 6),
+    save_path: str | None = None,
+) -> plt.Figure:
+    """
+    Violin plot of the reward distribution for each arm in a bandit environment.
+
+    Args:
+        env: A MultiArmedBanditEnv instance (must already be reset).
+        n_samples: Number of reward samples to draw per arm.
+        figsize: Figure size.
+        save_path: If provided, save the figure to this path.
+
+    Returns:
+        The matplotlib Figure.
+    """
+    k = env.k
+    true_means = env.true_means()
+    samples = np.array([
+        [env._sample_reward(arm) for _ in range(n_samples)]
+        for arm in range(k)
+    ])
+
+    fig, ax = plt.subplots(figsize=figsize)
+    parts = ax.violinplot(samples.T, positions=range(k), showmeans=True, showmedians=False)
+
+    # Highlight the optimal arm
+    optimal = int(np.argmax(true_means))
+    for i, body in enumerate(parts["bodies"]):
+        body.set_alpha(0.7)
+        if i == optimal:
+            body.set_facecolor("gold")
+        else:
+            body.set_facecolor("steelblue")
+
+    ax.scatter(range(k), true_means, color="red", zorder=5, s=30, label="True mean (μ)")
+    ax.set_xticks(range(k))
+    ax.set_xticklabels([f"Arm {i}" for i in range(k)])
+    ax.set_xlabel("Action (arm)")
+    ax.set_ylabel("Reward distribution")
+    ax.set_title("Reward Distributions by Arm")
+    ax.legend(loc="best", fontsize=9)
+    ax.grid(alpha=0.3, axis="y")
+    plt.tight_layout()
+
+    if save_path:
+        plt.savefig(save_path, dpi=150, bbox_inches="tight")
+
+    return fig

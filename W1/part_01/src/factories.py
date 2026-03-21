@@ -15,7 +15,6 @@ _AGENT_REGISTRY = {
 def make_bandit_env(
     k: int = 10,
     arms: Optional[list[dict]] = None,
-    dist: str = "gaussian",
     randomize: bool = True,
     max_steps: int = 1000,
     seed: Optional[int] = None,
@@ -24,18 +23,17 @@ def make_bandit_env(
     Create a multi-armed bandit environment.
 
     Shorthand usage:
-        env = make_bandit_env(k=10, dist="gaussian", randomize=True, max_steps=2000)
+        env = make_bandit_env(k=10, randomize=True, max_steps=2000)
 
     Custom arm configs:
         env = make_bandit_env(arms=[
-            {"dist": "gaussian", "mu": 1.0, "sigma": 0.5},
-            {"dist": "gaussian", "mu": 2.0, "sigma": 1.0},
+            {"mu": 1.0, "sigma": 0.5},
+            {"mu": 2.0, "sigma": 1.0},
         ], max_steps=2000)
 
     Args:
         k: Number of arms (used when arms is None).
         arms: Explicit arm configurations as a list of dicts.
-        dist: Distribution type (currently only "gaussian" supported).
         randomize: If True, re-sample arm means from N(0,1) on each reset().
         max_steps: Number of steps per episode.
         seed: Random seed.

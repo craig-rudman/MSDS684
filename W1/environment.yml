@@ -1,0 +1,10 @@
+name: msds684-w1
+channels:
+  - defaults
+dependencies:
+  - python=3.11
+  - pip
+  - pip:
+      - gymnasium>=1.2
+      - numpy>=2.0
+      - matplotlib>=3.10
