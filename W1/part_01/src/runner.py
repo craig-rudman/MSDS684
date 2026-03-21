@@ -2,7 +2,6 @@
 
 import numpy as np
 from dataclasses import dataclass
-from typing import Optional
 
 from .bandit_env import MultiArmedBanditEnv
 from .agents import BanditAgent
@@ -44,56 +43,67 @@ class SimulationResult:
         }
 
 
-def run_simulation(
-    env: MultiArmedBanditEnv,
-    agent: BanditAgent,
-    n_runs: int = 100,
-    agent_name: Optional[str] = None,
-) -> SimulationResult:
-    """
-    Run multiple independent episodes of a bandit simulation.
+class BanditSimulator:
+    """Runs bandit simulations and collects per-step metrics."""
 
-    On each run, env.reset() re-samples arm means (if randomize=True),
-    the agent is reset, and max_steps actions are taken.
+    def __init__(self, env: MultiArmedBanditEnv, agent: BanditAgent):
+        """
+        Args:
+            env: The bandit environment.
+            agent: The bandit agent.
+        """
+        self.env = env
+        self.agent = agent
 
-    Args:
-        env: The bandit environment.
-        agent: The bandit agent.
-        n_runs: Number of independent runs to average over.
-        agent_name: Label for this agent (defaults to class name).
+    def run(
+        self,
+        n_runs: int = 100,
+        agent_name: str | None = None,
+    ) -> SimulationResult:
+        """
+        Run multiple independent episodes of a bandit simulation.
 
-    Returns:
-        SimulationResult with per-step metrics across all runs.
-    """
-    n_steps = env.max_steps
-    all_rewards = np.zeros((n_runs, n_steps))
-    all_optimal = np.zeros((n_runs, n_steps))
-    all_regret = np.zeros((n_runs, n_steps))
+        On each run, env.reset() re-samples arm means (if randomize=True),
+        the agent is reset, and max_steps actions are taken.
 
-    for run in range(n_runs):
-        env.reset()
-        agent.reset()
+        Args:
+            n_runs: Number of independent runs to average over.
+            agent_name: Label for this agent (defaults to class name).
 
-        best_mean = env.true_means().max()
-        cum_regret = 0.0
+        Returns:
+            SimulationResult with per-step metrics across all runs.
+        """
+        env = self.env
+        agent = self.agent
+        n_steps = env.max_steps
+        all_rewards = np.zeros((n_runs, n_steps))
+        all_optimal = np.zeros((n_runs, n_steps))
+        all_regret = np.zeros((n_runs, n_steps))
 
-        for step in range(n_steps):
-            action = agent.select_action()
-            _, reward, terminated, _, info = env.step(action)
-            agent.update(action, reward)
+        for run in range(n_runs):
+            env.reset()
+            agent.reset()
 
-            all_rewards[run, step] = reward
-            all_optimal[run, step] = float(info["optimal_action"])
-            cum_regret += best_mean - reward
-            all_regret[run, step] = cum_regret
+            best_mean = env.true_means().max()
+            cum_regret = 0.0
 
-            if terminated:
-                break
+            for step in range(n_steps):
+                action = agent.select_action()
+                _, reward, terminated, _, info = env.step(action)
+                agent.update(action, reward)
 
-    name = agent_name if agent_name is not None else type(agent).__name__
-    return SimulationResult(
-        agent_name=name,
-        _rewards=all_rewards,
-        _optimal_actions=all_optimal,
-        _cumulative_regret=all_regret,
-    )
+                all_rewards[run, step] = reward
+                all_optimal[run, step] = float(info["optimal_action"])
+                cum_regret += best_mean - reward
+                all_regret[run, step] = cum_regret
+
+                if terminated:
+                    break
+
+        name = agent_name if agent_name is not None else type(agent).__name__
+        return SimulationResult(
+            agent_name=name,
+            _rewards=all_rewards,
+            _optimal_actions=all_optimal,
+            _cumulative_regret=all_regret,
+        )

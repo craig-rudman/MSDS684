@@ -155,71 +155,90 @@ classDiagram
 
     class MultiArmedBanditEnv {
         +int k
-        +int max_steps
         +bool randomize
-        +reset() tuple[obs, info]
-        +step(action) tuple[obs, r, done, info]
+        +int max_steps
+        +Discrete action_space
+        +Discrete observation_space
+        -list~dict~ _arm_configs
+        -ndarray _true_means
+        -int _step_count
+        -_sample_arm_means()
+        -_sample_reward(arm) float
         +true_means() ndarray
+        +optimal_arm() int
+        +reset(seed, options) tuple
+        +step(action) tuple
     }
 
     class BanditAgent {
         <<abstract>>
         +int k
+        +Generator np_random
         +ndarray counts
         +ndarray values
-        +select_action() int
+        +int t
+        +select_action()* int
         +update(action, reward)
         +reset()
     }
 
     class EpsilonGreedyAgent {
         +float epsilon
+        +select_action() int
     }
 
     class UCBAgent {
         +float c
+        +select_action() int
     }
 
     class SimulationResult {
+        <<dataclass>>
         +str agent_name
-        +ndarray rewards
+        -ndarray _rewards
+        -ndarray _optimal_actions
+        -ndarray _cumulative_regret
         +mean_reward() ndarray
         +optimal_action_pct() ndarray
         +cumulative_regret() ndarray
         +summary() dict
     }
 
+    class BanditSimulator {
+        +MultiArmedBanditEnv env
+        +BanditAgent agent
+        +run(n_runs, agent_name) SimulationResult
+    }
+
+    class BanditPlotter {
+        +list~SimulationResult~ results
+        +int smoothing
+        -_smooth(arr, w)$ ndarray
+        -_get_colors() ndarray
+        -_plot_panel_on_ax(ax, panel_key)
+        +plot_comparison(panels, figsize, save_path) Figure
+        +plot_panel(panel, figsize, save_path) Figure
+        +plot_reward_distributions(env, n_samples, figsize, save_path)$ Figure
+    }
+
+    class BanditFactory {
+        -dict _AGENT_REGISTRY$
+        +make_bandit_env(k, arms, randomize, max_steps, seed)$ MultiArmedBanditEnv
+        +make_agent(name, k, seed, **kwargs) BanditAgent
+    }
+
     `gymnasium.Env` <|-- MultiArmedBanditEnv
     BanditAgent <|-- EpsilonGreedyAgent
     BanditAgent <|-- UCBAgent
 
-    MultiArmedBanditEnv <.. run_simulation : uses
-    BanditAgent <.. run_simulation : uses
-    run_simulation ..> SimulationResult : produces
-    SimulationResult <.. plot_comparison : consumes
+    BanditSimulator --> MultiArmedBanditEnv : env
+    BanditSimulator --> BanditAgent : agent
+    BanditSimulator ..> SimulationResult : produces
 
-    class run_simulation {
-        <<function>>
-        +run_simulation(env, agent, n_runs) SimulationResult
-    }
+    BanditPlotter --> SimulationResult : results
 
-    class plot_comparison {
-        <<function>>
-        +plot_comparison(results, panels) Figure
-    }
-
-    class make_bandit_env {
-        <<factory>>
-        +make_bandit_env(arms, ...) MultiArmedBanditEnv
-    }
-
-    class make_agent {
-        <<factory>>
-        +make_agent(name, k, ...) BanditAgent
-    }
-
-    make_bandit_env ..> MultiArmedBanditEnv : creates
-    make_agent ..> BanditAgent : creates
+    BanditFactory ..> MultiArmedBanditEnv : creates
+    BanditFactory ..> BanditAgent : creates
 ```
 
 ## Part 2 — MDP Environments and Random Baseline
