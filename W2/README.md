@@ -24,6 +24,7 @@ W2/
 │   ├── Lab 2 development.ipynb    # Development notebook
 │   └── Rudman_Craig_Lab2.ipynb    # Final submission notebook
 ├── img/                       # Generated figures
+├── environment.yml            # Conda environment (gym_env)
 └── README.md
 ```
 
@@ -57,6 +58,13 @@ V, policy = vi.solve(mode="sync")
 viz = GridWorldVisualizer(env)
 viz.plot_value_function(V)
 viz.plot_policy(policy)
+```
+
+## Environment Setup
+
+```bash
+conda env create -f environment.yml
+conda activate gym_env
 ```
 
 ## Running Tests
