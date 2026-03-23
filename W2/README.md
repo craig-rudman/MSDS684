@@ -75,4 +75,12 @@ python -m pytest tests/ -v
 
 ## Current Status
 
-All class stubs are in place with methods raising `NotImplementedError`. A test suite of 47 tests is ready for test-driven development. Implementation will proceed one TODO item at a time following a red-green-refactor workflow.
+| Component | Status | Tests |
+|---|---|---|
+| `GridWorld` | Implemented | 20/20 passing |
+| `PolicyIteration` | Stub | Pending |
+| `ValueIteration` | Stub | Pending |
+| `GridWorldVisualizer` | Stub | Pending |
+| `ExperimentRunner` | Stub | Pending |
+
+Implementation is proceeding one TODO at a time following a red-green-refactor workflow.
