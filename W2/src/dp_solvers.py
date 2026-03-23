@@ -91,7 +91,27 @@ class PolicyIteration:
         int
             Number of sweeps until convergence.
         """
-        raise NotImplementedError
+        P = self.env.P
+        sweeps = 0
+        while True:
+            delta = 0.0
+            for s in range(self.env.n_states):
+                if s in self._terminal_states:
+                    continue
+                v_old = self.V[s]
+                a = self.policy[s]
+                new_val = 0.0
+                for prob, s_prime, reward, done in P[s][a]:
+                    if done:
+                        new_val += prob * reward
+                    else:
+                        new_val += prob * (reward + self.gamma * self.V[s_prime])
+                self.V[s] = new_val
+                delta = max(delta, abs(v_old - new_val))
+            sweeps += 1
+            if delta < self.theta:
+                break
+        return sweeps
 
     # ------------------------------------------------------------------
     # Policy improvement

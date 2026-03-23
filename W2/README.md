@@ -78,7 +78,7 @@ python -m pytest tests/ -v
 | Component | Status | Tests |
 |---|---|---|
 | `GridWorld` | Implemented | 20/20 passing |
-| `PolicyIteration` | Sync implemented (in-place pending) | 5/5 passing |
+| `PolicyIteration` | Sync and in-place implemented | 9/9 passing |
 | `ValueIteration` | Stub | Pending |
 | `GridWorldVisualizer` | Stub | Pending |
 | `ExperimentRunner` | Stub | Pending |
