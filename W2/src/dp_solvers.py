@@ -36,6 +36,11 @@ class PolicyIteration:
         self.V = np.zeros(env.n_states)
         self.policy = np.zeros(env.n_states, dtype=int)
 
+        # Pre-compute terminal state indices for fast lookup
+        self._terminal_states = {
+            env.rc_to_state(*t) for t in env.terminal_states
+        }
+
         # History for visualization / analysis
         self.value_history: list[np.ndarray] = []
         self.policy_history: list[np.ndarray] = []
@@ -54,7 +59,25 @@ class PolicyIteration:
         int
             Number of sweeps until convergence.
         """
-        raise NotImplementedError
+        P = self.env.P
+        sweeps = 0
+        while True:
+            V_new = np.zeros_like(self.V)
+            for s in range(self.env.n_states):
+                if s in self._terminal_states:
+                    continue
+                a = self.policy[s]
+                for prob, s_prime, reward, done in P[s][a]:
+                    if done:
+                        V_new[s] += prob * reward
+                    else:
+                        V_new[s] += prob * (reward + self.gamma * self.V[s_prime])
+            sweeps += 1
+            delta = np.max(np.abs(V_new - self.V))
+            self.V = V_new
+            if delta < self.theta:
+                break
+        return sweeps
 
     # ------------------------------------------------------------------
     # In-place policy evaluation
@@ -82,7 +105,23 @@ class PolicyIteration:
         bool
             True if the policy is stable (no changes), False otherwise.
         """
-        raise NotImplementedError
+        P = self.env.P
+        stable = True
+        for s in range(self.env.n_states):
+            if s in self._terminal_states:
+                continue
+            old_action = self.policy[s]
+            q_values = np.zeros(self.env.n_actions)
+            for a in range(self.env.n_actions):
+                for prob, s_prime, reward, done in P[s][a]:
+                    if done:
+                        q_values[a] += prob * reward
+                    else:
+                        q_values[a] += prob * (reward + self.gamma * self.V[s_prime])
+            self.policy[s] = np.argmax(q_values)
+            if old_action != self.policy[s]:
+                stable = False
+        return stable
 
     # ------------------------------------------------------------------
     # Full algorithm
@@ -101,7 +140,23 @@ class PolicyIteration:
         tuple[np.ndarray, np.ndarray]
             Final (value_function, policy).
         """
-        raise NotImplementedError
+        import time
+
+        evaluate = self.evaluate_sync if mode == "sync" else self.evaluate_inplace
+
+        while True:
+            t0 = time.perf_counter()
+            eval_sweeps = evaluate()
+            self.eval_iterations.append(eval_sweeps)
+            stable = self.improve()
+            elapsed = time.perf_counter() - t0
+            self.wall_clock_times.append(elapsed)
+            self.value_history.append(self.V.copy())
+            self.policy_history.append(self.policy.copy())
+            if stable:
+                break
+
+        return self.V, self.policy
 
 
 class ValueIteration:
