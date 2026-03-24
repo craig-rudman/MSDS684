@@ -95,7 +95,16 @@ class ExperimentRunner:
         dict[str, dict]
             Per-variant results.
         """
-        raise NotImplementedError
+        env = gym.make(
+            "FrozenLake-v1", map_name=map_name, is_slippery=is_slippery
+        )
+        uw = env.unwrapped
+        adapter = _FrozenLakeAdapter(uw)
+
+        name = f"frozen_lake_{map_name}_{'slippery' if is_slippery else 'deterministic'}"
+        results = self.run_gridworld(name, adapter)
+        env.close()
+        return results
 
     # ------------------------------------------------------------------
     # Visualization
@@ -119,6 +128,34 @@ class ExperimentRunner:
     def cli() -> None:
         """Parse command-line arguments and run experiments."""
         raise NotImplementedError
+
+
+class _FrozenLakeAdapter:
+    """Thin adapter exposing Gymnasium FrozenLake with the same interface as GridWorld.
+
+    The DP solvers expect ``n_states``, ``n_actions``, ``P``,
+    ``terminal_states``, and ``rc_to_state``.  FrozenLake already stores
+    its transition model in the compatible ``(prob, s', reward, done)``
+    format, so this adapter simply bridges the attribute names.
+    """
+
+    def __init__(self, unwrapped_env: gym.Env) -> None:
+        self.n_states = unwrapped_env.observation_space.n
+        self.n_actions = unwrapped_env.action_space.n
+        self.P = unwrapped_env.P
+
+        desc = unwrapped_env.desc
+        ncol = desc.shape[1]
+        self.terminal_states = [
+            (r, c)
+            for r in range(desc.shape[0])
+            for c in range(ncol)
+            if desc[r][c] in (b"H", b"G")
+        ]
+        self._ncol = ncol
+
+    def rc_to_state(self, r: int, c: int) -> int:
+        return r * self._ncol + c
 
 
 if __name__ == "__main__":
