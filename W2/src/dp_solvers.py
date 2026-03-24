@@ -223,7 +223,37 @@ class ValueIteration:
         tuple[np.ndarray, np.ndarray]
             Final (value_function, policy).
         """
-        raise NotImplementedError
+        import time
+
+        P = self.env.P
+        terminal = {self.env.rc_to_state(*t) for t in self.env.terminal_states}
+
+        while True:
+            t0 = time.perf_counter()
+            V_new = np.zeros_like(self.V)
+            for s in range(self.env.n_states):
+                if s in terminal:
+                    continue
+                q_values = np.zeros(self.env.n_actions)
+                for a in range(self.env.n_actions):
+                    for prob, s_prime, reward, done in P[s][a]:
+                        if done:
+                            q_values[a] += prob * reward
+                        else:
+                            q_values[a] += prob * (reward + self.gamma * self.V[s_prime])
+                V_new[s] = np.max(q_values)
+            delta = np.max(np.abs(V_new - self.V))
+            self.V = V_new
+            self.iterations += 1
+            elapsed = time.perf_counter() - t0
+            self.wall_clock_times.append(elapsed)
+            self.value_history.append(self.V.copy())
+            if delta < self.theta:
+                break
+
+        self.policy = self.extract_policy()
+        self.policy_history.append(self.policy.copy())
+        return self.V, self.policy
 
     # ------------------------------------------------------------------
     # In-place value iteration
@@ -237,7 +267,37 @@ class ValueIteration:
         tuple[np.ndarray, np.ndarray]
             Final (value_function, policy).
         """
-        raise NotImplementedError
+        import time
+
+        P = self.env.P
+        terminal = {self.env.rc_to_state(*t) for t in self.env.terminal_states}
+
+        while True:
+            t0 = time.perf_counter()
+            delta = 0.0
+            for s in range(self.env.n_states):
+                if s in terminal:
+                    continue
+                v_old = self.V[s]
+                q_values = np.zeros(self.env.n_actions)
+                for a in range(self.env.n_actions):
+                    for prob, s_prime, reward, done in P[s][a]:
+                        if done:
+                            q_values[a] += prob * reward
+                        else:
+                            q_values[a] += prob * (reward + self.gamma * self.V[s_prime])
+                self.V[s] = np.max(q_values)
+                delta = max(delta, abs(v_old - self.V[s]))
+            self.iterations += 1
+            elapsed = time.perf_counter() - t0
+            self.wall_clock_times.append(elapsed)
+            self.value_history.append(self.V.copy())
+            if delta < self.theta:
+                break
+
+        self.policy = self.extract_policy()
+        self.policy_history.append(self.policy.copy())
+        return self.V, self.policy
 
     # ------------------------------------------------------------------
     # Policy extraction
@@ -251,7 +311,21 @@ class ValueIteration:
         np.ndarray
             Policy array of shape ``(n_states,)``.
         """
-        raise NotImplementedError
+        P = self.env.P
+        terminal = {self.env.rc_to_state(*t) for t in self.env.terminal_states}
+        policy = np.zeros(self.env.n_states, dtype=int)
+        for s in range(self.env.n_states):
+            if s in terminal:
+                continue
+            q_values = np.zeros(self.env.n_actions)
+            for a in range(self.env.n_actions):
+                for prob, s_prime, reward, done in P[s][a]:
+                    if done:
+                        q_values[a] += prob * reward
+                    else:
+                        q_values[a] += prob * (reward + self.gamma * self.V[s_prime])
+            policy[s] = np.argmax(q_values)
+        return policy
 
     # ------------------------------------------------------------------
     # Convenience entry point
@@ -270,4 +344,6 @@ class ValueIteration:
         tuple[np.ndarray, np.ndarray]
             Final (value_function, policy).
         """
-        raise NotImplementedError
+        if mode == "sync":
+            return self.solve_sync()
+        return self.solve_inplace()

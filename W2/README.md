@@ -78,8 +78,8 @@ python -m pytest tests/ -v
 | Component | Status | Tests |
 |---|---|---|
 | `GridWorld` | Implemented | 20/20 passing |
-| `PolicyIteration` | Sync and in-place implemented | 9/9 passing |
-| `ValueIteration` | Stub | Pending |
+| `PolicyIteration` | Sync and in-place implemented | 10/10 passing |
+| `ValueIteration` | Sync and in-place implemented | 13/13 passing |
 | `GridWorldVisualizer` | Stub | Pending |
 | `ExperimentRunner` | Stub | Pending |
 
