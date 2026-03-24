@@ -81,6 +81,6 @@ python -m pytest tests/ -v
 | `PolicyIteration` | Sync and in-place implemented | 10/10 passing |
 | `ValueIteration` | Sync and in-place implemented | 13/13 passing |
 | `GridWorldVisualizer` | `plot_value_function`, `plot_policy`, and `plot_convergence` implemented | 5/7 passing |
-| `ExperimentRunner` | Stub | Pending |
+| `ExperimentRunner` | `run_gridworld` implemented | 4/6 passing |
 
 Implementation is proceeding one TODO at a time following a red-green-refactor workflow.

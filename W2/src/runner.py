@@ -52,7 +52,29 @@ class ExperimentRunner:
         dict[str, dict]
             Per-variant results keyed by variant name.
         """
-        raise NotImplementedError
+        all_modes = ["pi_sync", "pi_inplace", "vi_sync", "vi_inplace"]
+        if modes is None:
+            modes = all_modes
+
+        results: dict[str, dict] = {}
+        for mode in modes:
+            algo, sweep = mode.split("_", 1)
+            if algo == "pi":
+                solver = PolicyIteration(env, gamma=self.gamma, theta=self.theta)
+            else:
+                solver = ValueIteration(env, gamma=self.gamma, theta=self.theta)
+
+            V, policy = solver.solve(mode=sweep)
+
+            results[mode] = {
+                "V": V,
+                "policy": policy,
+                "value_history": solver.value_history,
+                "wall_clock_times": solver.wall_clock_times,
+            }
+
+        self.results[name] = results
+        return results
 
     # ------------------------------------------------------------------
     # FrozenLake experiment
