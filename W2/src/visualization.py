@@ -93,7 +93,47 @@ class GridWorldVisualizer:
         -------
         plt.Axes
         """
-        raise NotImplementedError
+        size = self.env.size
+
+        # Action-to-direction mapping: (dx, dy) in plot coordinates
+        # Actions: UP=0, RIGHT=1, DOWN=2, LEFT=3
+        # In imshow coordinates: row increases downward, col increases rightward
+        # quiver uses (U, V) where U is horizontal (col) and V is vertical (row-up)
+        action_to_dxdy = {
+            0: (0, 1),    # UP: arrow points up (positive V)
+            1: (1, 0),    # RIGHT: arrow points right (positive U)
+            2: (0, -1),   # DOWN: arrow points down (negative V)
+            3: (-1, 0),   # LEFT: arrow points left (negative U)
+        }
+
+        if ax is None:
+            _, ax = plt.subplots(figsize=(6, 6))
+
+        # Build arrow arrays
+        X, Y, U, V = [], [], [], []
+        for s in range(self.env.n_states):
+            r, c = self.env.state_to_rc(s)
+            # Skip obstacles and terminal states
+            if (r, c) in self.env.obstacles or (r, c) in self.env.terminal_states:
+                continue
+            dx, dy = action_to_dxdy[int(policy[s])]
+            X.append(c)
+            Y.append(r)
+            U.append(dx)
+            V.append(dy)
+
+        ax.set_xlim(-0.5, size - 0.5)
+        ax.set_ylim(size - 0.5, -0.5)  # invert y so row 0 is at top
+        ax.set_xticks(range(size))
+        ax.set_yticks(range(size))
+        ax.set_aspect("equal")
+        ax.set_title(title)
+
+        if X:
+            ax.quiver(X, Y, U, V, angles="xy", scale_units="xy", scale=2.5,
+                      pivot="middle", color="steelblue", width=0.02)
+
+        return ax
 
     # ------------------------------------------------------------------
     # Iteration history heatmaps
