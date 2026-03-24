@@ -190,6 +190,7 @@ class GridWorldVisualizer:
     def plot_convergence(
         self,
         results: dict[str, dict],
+        title: str = "Convergence",
     ) -> plt.Figure:
         """Compare algorithms by iteration count and wall-clock time.
 
@@ -198,9 +199,43 @@ class GridWorldVisualizer:
         results : dict[str, dict]
             Mapping of algorithm name to a dict with keys
             ``"value_history"`` and ``"wall_clock_times"``.
+        title : str
+            Overall figure title.
 
         Returns
         -------
         plt.Figure
         """
-        raise NotImplementedError
+        fig, (ax_iter, ax_time) = plt.subplots(1, 2, figsize=(12, 5))
+
+        for label, data in results.items():
+            history = data["value_history"]
+            times = data["wall_clock_times"]
+
+            # Compute max absolute change between successive snapshots
+            deltas = [
+                float(np.max(np.abs(history[i] - history[i - 1])))
+                for i in range(1, len(history))
+            ]
+
+            iterations = list(range(1, len(deltas) + 1))
+            cum_times = np.cumsum(times[: len(deltas)]).tolist()
+
+            ax_iter.plot(iterations, deltas, marker="o", label=label)
+            ax_time.plot(cum_times, deltas, marker="o", label=label)
+
+        ax_iter.set_yscale("log")
+        ax_time.set_yscale("log")
+        ax_iter.set_xlabel("Iteration")
+        ax_iter.set_ylabel("Max |ΔV|")
+        ax_iter.set_title("Convergence by Iteration")
+        ax_iter.legend()
+
+        ax_time.set_xlabel("Cumulative Wall-Clock Time (s)")
+        ax_time.set_ylabel("Max |ΔV|")
+        ax_time.set_title("Convergence by Time")
+        ax_time.legend()
+
+        fig.suptitle(title, fontsize=14)
+        fig.tight_layout()
+        return fig

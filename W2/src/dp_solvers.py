@@ -42,8 +42,8 @@ class PolicyIteration:
         }
 
         # History for visualization / analysis
-        self.value_history: list[np.ndarray] = []
-        self.policy_history: list[np.ndarray] = []
+        self.value_history: list[np.ndarray] = [self.V.copy()]
+        self.policy_history: list[np.ndarray] = [self.policy.copy()]
         self.eval_iterations: list[int] = []
         self.wall_clock_times: list[float] = []
 
@@ -206,8 +206,8 @@ class ValueIteration:
         self.policy = np.zeros(env.n_states, dtype=int)
 
         # History for visualization / analysis
-        self.value_history: list[np.ndarray] = []
-        self.policy_history: list[np.ndarray] = []
+        self.value_history: list[np.ndarray] = [self.V.copy()]
+        self.policy_history: list[np.ndarray] = [self.policy.copy()]
         self.iterations: int = 0
         self.wall_clock_times: list[float] = []
 
