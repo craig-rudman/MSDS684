@@ -48,7 +48,25 @@ class GridWorldVisualizer:
         -------
         plt.Axes
         """
-        raise NotImplementedError
+        size = self.env.size
+        V_grid = V.reshape(size, size)
+
+        if ax is None:
+            _, ax = plt.subplots(figsize=(6, 5))
+
+        im = ax.imshow(V_grid, cmap="viridis", origin="upper")
+        plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+
+        # Annotate each cell with its value
+        for r in range(size):
+            for c in range(size):
+                ax.text(c, r, f"{V_grid[r, c]:.2f}",
+                        ha="center", va="center", color="white", fontsize=9)
+
+        ax.set_xticks(range(size))
+        ax.set_yticks(range(size))
+        ax.set_title(title)
+        return ax
 
     # ------------------------------------------------------------------
     # Policy arrow (quiver) plot
