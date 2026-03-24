@@ -95,14 +95,14 @@ class GridWorldVisualizer:
         """
         size = self.env.size
 
-        # Action-to-direction mapping: (dx, dy) in plot coordinates
+        # Action-to-direction mapping: (U, V) in plot coordinates
         # Actions: UP=0, RIGHT=1, DOWN=2, LEFT=3
-        # In imshow coordinates: row increases downward, col increases rightward
-        # quiver uses (U, V) where U is horizontal (col) and V is vertical (row-up)
+        # y-axis is inverted (row 0 at top), so V is negated:
+        #   UP (decrease row) -> negative V, DOWN (increase row) -> positive V
         action_to_dxdy = {
-            0: (0, 1),    # UP: arrow points up (positive V)
+            0: (0, -1),   # UP: arrow points up (negative V in inverted y)
             1: (1, 0),    # RIGHT: arrow points right (positive U)
-            2: (0, -1),   # DOWN: arrow points down (negative V)
+            2: (0, 1),    # DOWN: arrow points down (positive V in inverted y)
             3: (-1, 0),   # LEFT: arrow points left (negative U)
         }
 
@@ -122,6 +122,20 @@ class GridWorldVisualizer:
             U.append(dx)
             V.append(dy)
 
+        # Fill obstacle cells with grey
+        for r, c in self.env.obstacles:
+            ax.add_patch(plt.Rectangle(
+                (c - 0.5, r - 0.5), 1, 1, facecolor="grey", edgecolor="none",
+            ))
+
+        # Fill terminal states with light green and a house icon
+        for r, c in self.env.terminal_states:
+            ax.add_patch(plt.Rectangle(
+                (c - 0.5, r - 0.5), 1, 1, facecolor="lightgreen", edgecolor="none",
+            ))
+            ax.text(c, r, "\u2302", ha="center", va="center",
+                    fontsize=20, color="darkgreen")
+
         ax.set_xlim(-0.5, size - 0.5)
         ax.set_ylim(size - 0.5, -0.5)  # invert y so row 0 is at top
         ax.set_xticks(range(size))
@@ -134,54 +148,6 @@ class GridWorldVisualizer:
                       pivot="middle", color="steelblue", width=0.02)
 
         return ax
-
-    # ------------------------------------------------------------------
-    # Iteration history heatmaps
-    # ------------------------------------------------------------------
-
-    def plot_value_history(
-        self,
-        value_history: list[np.ndarray],
-        interval: int = 1,
-    ) -> plt.Figure:
-        """Show value function heatmaps at selected iterations.
-
-        Parameters
-        ----------
-        value_history : list[np.ndarray]
-            List of V arrays recorded at each iteration.
-        interval : int
-            Plot every ``interval``-th snapshot.
-
-        Returns
-        -------
-        plt.Figure
-        """
-        raise NotImplementedError
-
-    # ------------------------------------------------------------------
-    # Policy history arrow plots
-    # ------------------------------------------------------------------
-
-    def plot_policy_history(
-        self,
-        policy_history: list[np.ndarray],
-        interval: int = 1,
-    ) -> plt.Figure:
-        """Show policy arrow plots at selected iterations.
-
-        Parameters
-        ----------
-        policy_history : list[np.ndarray]
-            List of policy arrays recorded at each iteration.
-        interval : int
-            Plot every ``interval``-th snapshot.
-
-        Returns
-        -------
-        plt.Figure
-        """
-        raise NotImplementedError
 
     # ------------------------------------------------------------------
     # Convergence curves

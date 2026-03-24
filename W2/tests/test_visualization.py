@@ -45,25 +45,6 @@ class TestPlotPolicy:
         plt.close("all")
 
 
-class TestPlotValueHistory:
-    """Value function snapshots across iterations."""
-
-    def test_returns_figure(self, visualizer, env_4x4_deterministic):
-        history = [np.random.randn(env_4x4_deterministic.n_states) for _ in range(5)]
-        fig = visualizer.plot_value_history(history)
-        assert isinstance(fig, plt.Figure)
-        plt.close("all")
-
-
-class TestPlotPolicyHistory:
-    """Policy snapshots across iterations."""
-
-    def test_returns_figure(self, visualizer, env_4x4_deterministic):
-        history = [np.zeros(env_4x4_deterministic.n_states, dtype=int) for _ in range(5)]
-        fig = visualizer.plot_policy_history(history)
-        assert isinstance(fig, plt.Figure)
-        plt.close("all")
-
 
 class TestPlotConvergence:
     """Convergence comparison curves."""
