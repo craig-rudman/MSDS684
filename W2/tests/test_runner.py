@@ -78,6 +78,42 @@ class TestRunFrozenLake:
         assert isinstance(results, dict)
 
 
+class TestCompareConvergence:
+    """ExperimentRunner.compare_convergence produces a summary table."""
+
+    def test_returns_list_of_dicts(self, env_4x4_deterministic):
+        runner = ExperimentRunner()
+        runner.run_gridworld("det", env_4x4_deterministic)
+        table = runner.compare_convergence()
+        assert isinstance(table, list)
+        assert len(table) > 0
+        assert isinstance(table[0], dict)
+
+    def test_expected_columns(self, env_4x4_deterministic):
+        runner = ExperimentRunner()
+        runner.run_gridworld("det", env_4x4_deterministic)
+        table = runner.compare_convergence()
+        expected_keys = {"experiment", "variant", "iterations", "wall_clock_s"}
+        for row in table:
+            assert set(row.keys()) == expected_keys
+
+    def test_multiple_experiments(self, env_4x4_deterministic, env_4x4_stochastic):
+        runner = ExperimentRunner()
+        runner.run_gridworld("det", env_4x4_deterministic)
+        runner.run_gridworld("stoch", env_4x4_stochastic)
+        table = runner.compare_convergence()
+        experiments = {row["experiment"] for row in table}
+        assert experiments == {"det", "stoch"}
+
+    def test_iterations_positive(self, env_4x4_deterministic):
+        runner = ExperimentRunner()
+        runner.run_gridworld("det", env_4x4_deterministic)
+        table = runner.compare_convergence()
+        for row in table:
+            assert row["iterations"] > 0
+            assert row["wall_clock_s"] > 0
+
+
 class TestCLI:
     """CLI argument parsing."""
 

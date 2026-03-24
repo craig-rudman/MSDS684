@@ -107,6 +107,30 @@ class ExperimentRunner:
         return results
 
     # ------------------------------------------------------------------
+    # Convergence comparison
+    # ------------------------------------------------------------------
+
+    def compare_convergence(self) -> list[dict]:
+        """Build a summary table comparing convergence across all experiments.
+
+        Returns
+        -------
+        list[dict]
+            One row per (experiment, variant) with keys:
+            ``experiment``, ``variant``, ``iterations``, ``wall_clock_s``.
+        """
+        table: list[dict] = []
+        for exp_name, variants in self.results.items():
+            for variant_name, data in variants.items():
+                table.append({
+                    "experiment": exp_name,
+                    "variant": variant_name,
+                    "iterations": len(data["value_history"]) - 1,
+                    "wall_clock_s": sum(data["wall_clock_times"]),
+                })
+        return table
+
+    # ------------------------------------------------------------------
     # Visualization
     # ------------------------------------------------------------------
 
