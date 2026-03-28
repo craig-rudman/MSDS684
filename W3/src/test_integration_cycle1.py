@@ -8,7 +8,7 @@ class TestAgentRunnerIntegration:
     """Integration tests: BlackjackAgent + EpisodeRunner work together."""
 
     def setup_method(self):
-        self.env = gym.make("Blackjack-v1")
+        self.env = gym.make("Blackjack-v1", sab=True)
         self.agent = BlackjackAgent(epsilon=0.1, discount_factor=1.0)
         self.runner = EpisodeRunner(self.env)
 
