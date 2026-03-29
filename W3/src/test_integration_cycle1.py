@@ -23,6 +23,12 @@ class TestAgentRunnerIntegration:
         policy = self.agent.get_policy()
         assert len(policy) > 0, "Agent should have learned something after 10 episodes"
 
+    def test_training_loop_collects_rewards(self):
+        rewards = self.runner.run_training(self.agent, num_episodes=10)
+        assert len(rewards) == 10
+        for r in rewards:
+            assert isinstance(r, (int, float))
+
     def test_agent_actions_are_valid_throughout_episode(self):
         episode = self.runner.run_episode(self.agent)
         for state, action, reward in episode:
