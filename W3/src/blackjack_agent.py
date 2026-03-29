@@ -5,9 +5,11 @@ from collections import defaultdict
 class BlackjackAgent:
     """First-visit Monte Carlo control agent with epsilon-soft policy."""
 
-    def __init__(self, epsilon: float = 0.1, discount_factor: float = 1.0):
+    def __init__(self, epsilon: float = 0.1, discount_factor: float = 1.0,
+                 decay_schedule=None):
         self.epsilon = epsilon
         self.discount_factor = discount_factor
+        self.decay_schedule = decay_schedule
         self.q_values = defaultdict(lambda: np.zeros(2))
         self.returns_sum = defaultdict(float)
         self.returns_count = defaultdict(float)
@@ -37,6 +39,11 @@ class BlackjackAgent:
                 self.q_values[state][action] = (
                     self.returns_sum[sa_pair] / self.returns_count[sa_pair]
                 )
+
+    def decay_epsilon(self) -> None:
+        """Decay epsilon using the injected schedule, if provided."""
+        if self.decay_schedule is not None:
+            self.epsilon = self.decay_schedule(self.epsilon)
 
     def get_policy(self) -> dict:
         """Return greedy policy derived from Q-values."""
