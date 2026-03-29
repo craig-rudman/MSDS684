@@ -35,16 +35,27 @@ class EpisodeRunner:
             print(f"Episode finished: {step_num} steps, Result={result}")
         return episode
 
-    def run_training(self, agent, num_episodes: int) -> list:
+    def run_training(self, agent, num_episodes: int, callback=None,
+                     callback_interval: int = 10000) -> list:
         """Run multiple episodes, updating the agent after each.
+
+        Args:
+            agent: Agent providing select_action, update, and optionally decay_epsilon.
+            num_episodes: number of episodes to run.
+            callback: optional callable(episode_num, rewards, agent) for progress reporting.
+            callback_interval: call the callback every N episodes.
 
         Returns:
             List of total rewards per episode.
         """
         rewards = []
-        for _ in range(num_episodes):
+        for i in range(1, num_episodes + 1):
             episode = self.run_episode(agent)
             agent.update(episode)
             episode_reward = sum(r for _, _, r in episode)
             rewards.append(episode_reward)
+            if hasattr(agent, "decay_epsilon"):
+                agent.decay_epsilon()
+            if callback and i % callback_interval == 0:
+                callback(i, rewards, agent)
         return rewards

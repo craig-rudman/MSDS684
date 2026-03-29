@@ -69,3 +69,60 @@ class TestEpisodeRunnerVerbose:
         self.runner.run_episode(self.agent)
         captured = capsys.readouterr()
         assert captured.out == ""
+
+
+class TestEpisodeRunnerCallback:
+    """Tests for training callback functionality."""
+
+    def setup_method(self):
+        self.env = gym.make("Blackjack-v1", sab=True)
+        self.runner = EpisodeRunner(self.env)
+        self.agent = BlackjackAgent(epsilon=0.1, discount_factor=1.0)
+
+    def test_callback_is_called(self):
+        calls = []
+        def cb(episode_num, rewards, agent):
+            calls.append(episode_num)
+        self.runner.run_training(self.agent, num_episodes=100,
+                                 callback=cb, callback_interval=50)
+        assert len(calls) == 2  # called at episode 50 and 100
+
+    def test_callback_receives_correct_episode_num(self):
+        seen = []
+        def cb(episode_num, rewards, agent):
+            seen.append(episode_num)
+        self.runner.run_training(self.agent, num_episodes=100,
+                                 callback=cb, callback_interval=25)
+        assert seen == [25, 50, 75, 100]
+
+    def test_callback_receives_rewards_list(self):
+        captured_rewards = []
+        def cb(episode_num, rewards, agent):
+            captured_rewards.append(len(rewards))
+        self.runner.run_training(self.agent, num_episodes=100,
+                                 callback=cb, callback_interval=50)
+        assert captured_rewards == [50, 100]
+
+    def test_callback_receives_agent(self):
+        captured_agents = []
+        def cb(episode_num, rewards, agent):
+            captured_agents.append(agent)
+        self.runner.run_training(self.agent, num_episodes=50,
+                                 callback=cb, callback_interval=50)
+        assert captured_agents[0] is self.agent
+
+    def test_no_callback_by_default(self):
+        # Should not raise even without callback
+        rewards = self.runner.run_training(self.agent, num_episodes=10)
+        assert len(rewards) == 10
+
+    def test_callback_with_decay(self):
+        decay_agent = BlackjackAgent(epsilon=1.0,
+                                     decay_schedule=lambda eps: max(0.01, eps - 0.001))
+        calls = []
+        def cb(episode_num, rewards, agent):
+            calls.append(agent.epsilon)
+        self.runner.run_training(decay_agent, num_episodes=50,
+                                 callback=cb, callback_interval=25)
+        assert len(calls) == 2
+        assert calls[1] < calls[0]  # epsilon should have decayed
