@@ -79,6 +79,89 @@ class TestVisualizerBakeoff:
         plt.close(fig)
 
 
+class TestVisualizerBakeoffCurves:
+    """Tests for bake-off learning curve overlay."""
+
+    def setup_method(self):
+        self.viz = Visualizer()
+        self.reward_series = {
+            "NaiveRandom": [(-1.0)] * 100,
+            "BasicStrategy": [0.0, -1.0, 1.0] * 34,
+            "MC Agent": [-1.0] * 50 + [1.0] * 50,
+        }
+
+    def test_returns_figure(self):
+        fig = self.viz.plot_bakeoff_curves(self.reward_series, window_size=10)
+        assert isinstance(fig, Figure)
+        plt.close(fig)
+
+    def test_has_legend(self):
+        fig = self.viz.plot_bakeoff_curves(self.reward_series, window_size=10)
+        ax = fig.axes[0]
+        legend = ax.get_legend()
+        assert legend is not None
+        labels = [t.get_text() for t in legend.get_texts()]
+        assert set(labels) == {"NaiveRandom", "BasicStrategy", "MC Agent"}
+        plt.close(fig)
+
+    def test_has_correct_number_of_lines(self):
+        fig = self.viz.plot_bakeoff_curves(self.reward_series, window_size=10)
+        ax = fig.axes[0]
+        assert len(ax.lines) == 3
+        plt.close(fig)
+
+    def test_has_confidence_bands(self):
+        fig = self.viz.plot_bakeoff_curves(self.reward_series, window_size=10)
+        ax = fig.axes[0]
+        # fill_between creates PolyCollection objects in ax.collections
+        assert len(ax.collections) == 3
+        plt.close(fig)
+
+    def test_single_agent(self):
+        fig = self.viz.plot_bakeoff_curves({"MC Agent": [1.0] * 50}, window_size=5)
+        assert isinstance(fig, Figure)
+        plt.close(fig)
+
+
+class TestVisualizerOutcomeBreakdown:
+    """Tests for stacked bar chart of win/loss/draw outcomes."""
+
+    def setup_method(self):
+        self.viz = Visualizer()
+        self.reward_series = {
+            "NaiveRandom": [1.0, -1.0, 0.0, -1.0, 1.0, -1.0],
+            "BasicStrategy": [1.0, 1.0, 0.0, -1.0, 1.0, 0.0],
+            "MC Agent": [1.0, 1.0, 1.0, -1.0, 0.0, 0.0],
+        }
+
+    def test_returns_figure(self):
+        fig = self.viz.plot_outcome_breakdown(self.reward_series)
+        assert isinstance(fig, Figure)
+        plt.close(fig)
+
+    def test_has_three_bar_groups(self):
+        fig = self.viz.plot_outcome_breakdown(self.reward_series)
+        ax = fig.axes[0]
+        # Each agent has 3 stacked segments (win, loss, draw)
+        # bar containers: one per category
+        assert len(ax.containers) == 3
+        plt.close(fig)
+
+    def test_has_legend(self):
+        fig = self.viz.plot_outcome_breakdown(self.reward_series)
+        ax = fig.axes[0]
+        legend = ax.get_legend()
+        assert legend is not None
+        labels = [t.get_text() for t in legend.get_texts()]
+        assert set(labels) == {"Win", "Loss", "Draw"}
+        plt.close(fig)
+
+    def test_single_agent(self):
+        fig = self.viz.plot_outcome_breakdown({"MC Agent": [1.0, -1.0, 0.0]})
+        assert isinstance(fig, Figure)
+        plt.close(fig)
+
+
 class TestVisualizerSavePlots:
     """Tests for saving plots to disk."""
 
