@@ -38,28 +38,50 @@ class Visualizer:
         ax.set_title(title)
         return fig
 
-    def plot_learning_curve(self, rewards: list, window_size: int = 1000) -> Figure:
+    def _rolling_stats(self, rewards, window_size):
+        """Compute rolling mean and 95% CI band for a reward series."""
+        rewards_arr = np.array(rewards, dtype=float)
+        effective_window = min(window_size, len(rewards_arr))
+        if effective_window < 1:
+            effective_window = 1
+        cumsum = np.cumsum(np.insert(rewards_arr, 0, 0))
+        mean = (cumsum[effective_window:] - cumsum[:-effective_window]) / effective_window
+        cumsum_sq = np.cumsum(np.insert(rewards_arr ** 2, 0, 0))
+        mean_sq = (cumsum_sq[effective_window:] - cumsum_sq[:-effective_window]) / effective_window
+        rolling_std = np.sqrt(np.maximum(mean_sq - mean ** 2, 0.0))
+        ci = 1.96 * rolling_std / np.sqrt(effective_window)
+        return mean, ci
+
+    def _plot_curve(self, ax, rewards, window_size, label=None, show_ci=False):
+        """Plot a single rolling-average curve with optional CI band."""
+        mean, ci = self._rolling_stats(rewards, window_size)
+        x = np.arange(len(mean))
+        ax.plot(x, mean, label=label)
+        if show_ci:
+            ax.fill_between(x, mean - ci, mean + ci, alpha=0.2)
+
+    def plot_learning_curve(self, rewards: list, window_size: int = 1000,
+                            show_ci: bool = False) -> Figure:
         """Smoothed average returns over episodes.
 
         Args:
             rewards: list of per-episode rewards.
             window_size: rolling average window size.
+            show_ci: if True, show 95% confidence interval shading.
 
         Returns:
             matplotlib Figure.
         """
-        rewards_arr = np.array(rewards)
-        effective_window = min(window_size, len(rewards_arr))
-        if effective_window < 1:
-            effective_window = 1
-        cumsum = np.cumsum(np.insert(rewards_arr, 0, 0))
-        smoothed = (cumsum[effective_window:] - cumsum[:-effective_window]) / effective_window
-
         fig, ax = plt.subplots(figsize=(10, 5))
-        ax.plot(smoothed)
+        self._plot_curve(ax, rewards, window_size, show_ci=show_ci)
         ax.set_xlabel("Episode")
-        ax.set_ylabel(f"Average Return (window={effective_window})")
+        ax.set_ylabel(f"Average Return (window={window_size})")
         ax.set_title("Learning Curve")
+        if show_ci:
+            ax.annotate("Shading = 95% confidence interval",
+                         xy=(0.99, 0.01), xycoords="axes fraction",
+                         ha="right", va="bottom", fontsize=8, fontstyle="italic",
+                         color="gray")
         return fig
 
     def plot_bakeoff(self, results: dict) -> Figure:
@@ -85,42 +107,30 @@ class Visualizer:
         return fig
 
     def plot_bakeoff_curves(self, reward_series: dict,
-                             window_size: int = 1000) -> Figure:
+                             window_size: int = 1000,
+                             show_ci: bool = True) -> Figure:
         """Overlay rolling-average learning curves for multiple agents.
 
         Args:
             reward_series: dict mapping agent name -> list of per-episode rewards.
             window_size: rolling average window size.
+            show_ci: if True, show 95% confidence interval shading.
 
         Returns:
             matplotlib Figure.
         """
         fig, ax = plt.subplots(figsize=(10, 5))
         for name, rewards in reward_series.items():
-            rewards_arr = np.array(rewards, dtype=float)
-            effective_window = min(window_size, len(rewards_arr))
-            if effective_window < 1:
-                effective_window = 1
-            # Rolling mean
-            cumsum = np.cumsum(np.insert(rewards_arr, 0, 0))
-            smoothed = (cumsum[effective_window:] - cumsum[:-effective_window]) / effective_window
-            # Rolling standard deviation
-            cumsum_sq = np.cumsum(np.insert(rewards_arr ** 2, 0, 0))
-            mean_sq = (cumsum_sq[effective_window:] - cumsum_sq[:-effective_window]) / effective_window
-            rolling_std = np.sqrt(np.maximum(mean_sq - smoothed ** 2, 0.0))
-            # 95% CI
-            band = 1.96 * rolling_std / np.sqrt(effective_window)
-            x = np.arange(len(smoothed))
-            ax.plot(x, smoothed, label=name)
-            ax.fill_between(x, smoothed - band, smoothed + band, alpha=0.2)
+            self._plot_curve(ax, rewards, window_size, label=name, show_ci=show_ci)
         ax.set_xlabel("Episode")
         ax.set_ylabel(f"Average Return (window={window_size})")
         ax.set_title("Agent Bake-Off: Learning Curves")
         ax.legend()
-        ax.annotate("Shading = 95% confidence interval",
-                     xy=(0.99, 0.01), xycoords="axes fraction",
-                     ha="right", va="bottom", fontsize=8, fontstyle="italic",
-                     color="gray")
+        if show_ci:
+            ax.annotate("Shading = 95% confidence interval",
+                         xy=(0.99, 0.01), xycoords="axes fraction",
+                         ha="right", va="bottom", fontsize=8, fontstyle="italic",
+                         color="gray")
         return fig
 
     def plot_outcome_breakdown(self, reward_series: dict) -> Figure:
