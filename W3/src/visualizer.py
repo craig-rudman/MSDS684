@@ -29,13 +29,16 @@ class Visualizer:
             for j, dealer_card in enumerate(dealer_range):
                 Z[i, j] = value_function.get((player_sum, dealer_card, usable_ace), 0.0)
 
-        fig = plt.figure(figsize=(10, 7))
+        fig = plt.figure(figsize=(12, 8))
         ax = fig.add_subplot(111, projection="3d")
         ax.plot_surface(X, Y, Z, cmap="viridis", edgecolor="none")
-        ax.set_xlabel("Dealer Showing")
-        ax.set_ylabel("Player Sum")
-        ax.set_zlabel("Value")
+        ax.set_xlabel("Dealer Showing", labelpad=10)
+        ax.set_ylabel("Player Sum", labelpad=10)
+        ax.set_zlabel("")
+        ax.text2D(-0.05, 0.5, "Value", transform=ax.transAxes,
+                  rotation=90, va="center", fontsize=10)
         ax.set_title(title)
+        ax.view_init(elev=25, azim=-135)
         return fig
 
     def _rolling_stats(self, rewards, window_size):
