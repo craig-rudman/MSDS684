@@ -111,13 +111,15 @@ class Visualizer:
 
     def plot_bakeoff_curves(self, reward_series: dict,
                              window_size: int = 1000,
-                             show_ci: bool = True) -> Figure:
+                             show_ci: bool = True,
+                             title: str = "Agent Bake-Off: Learning Curves") -> Figure:
         """Overlay rolling-average learning curves for multiple agents.
 
         Args:
             reward_series: dict mapping agent name -> list of per-episode rewards.
             window_size: rolling average window size.
             show_ci: if True, show 95% confidence interval shading.
+            title: plot title.
 
         Returns:
             matplotlib Figure.
@@ -127,7 +129,7 @@ class Visualizer:
             self._plot_curve(ax, rewards, window_size, label=name, show_ci=show_ci)
         ax.set_xlabel("Episode")
         ax.set_ylabel(f"Average Return (window={window_size})")
-        ax.set_title("Agent Bake-Off: Learning Curves")
+        ax.set_title(title)
         ax.legend()
         if show_ci:
             ax.annotate("Shading = 95% confidence interval",

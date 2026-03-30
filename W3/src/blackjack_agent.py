@@ -13,6 +13,7 @@ class BlackjackAgent:
         self.q_values = defaultdict(lambda: np.zeros(2))
         self.returns_sum = defaultdict(float)
         self.returns_count = defaultdict(float)
+        self._exploration_metric = None
 
     def select_action(self, state: tuple) -> int:
         n_actions = 2
@@ -44,6 +45,22 @@ class BlackjackAgent:
         """Decay epsilon using the injected schedule, if provided."""
         if self.decay_schedule is not None:
             self.epsilon = self.decay_schedule(self.epsilon)
+
+    def set_exploration_metric(self, fn) -> None:
+        """Set a custom exploration metric callable(agent) -> float."""
+        self._exploration_metric = fn
+
+    def get_exploration_signal(self) -> float:
+        """Return a scalar summarizing exploration state.
+
+        Default: average visit count across state-action pairs.
+        Override via set_exploration_metric().
+        """
+        if self._exploration_metric is not None:
+            return self._exploration_metric(self)
+        if not self.returns_count:
+            return 0.0
+        return float(np.mean(list(self.returns_count.values())))
 
     def get_policy(self) -> dict:
         """Return greedy policy derived from Q-values."""

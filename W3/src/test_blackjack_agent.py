@@ -109,3 +109,41 @@ class TestBlackjackAgentEpsilonDecay:
         for _ in range(99):
             agent.decay_epsilon()
         assert agent.epsilon == pytest.approx(0.01)
+
+
+class TestBlackjackAgentExplorationMetric:
+    """Tests for exploration signal reporting."""
+
+    def test_default_returns_float(self):
+        agent = BlackjackAgent(epsilon=0.1)
+        episode = [((18, 6, False), 1, 0.0), ((20, 6, False), 0, 1.0)]
+        agent.update(episode)
+        signal = agent.get_exploration_signal()
+        assert isinstance(signal, float)
+
+    def test_default_is_average_visit_count(self):
+        agent = BlackjackAgent(epsilon=0.1)
+        episode = [((18, 6, False), 1, 0.0), ((20, 6, False), 0, 1.0)]
+        agent.update(episode)
+        agent.update(episode)
+        # Two updates, two state-action pairs, each visited once per episode
+        # Average visit count = (2 + 2) / 2 = 2.0
+        assert agent.get_exploration_signal() == pytest.approx(2.0)
+
+    def test_no_visits_returns_zero(self):
+        agent = BlackjackAgent(epsilon=0.1)
+        assert agent.get_exploration_signal() == 0.0
+
+    def test_custom_metric_via_setter(self):
+        agent = BlackjackAgent(epsilon=0.1)
+        episode = [((18, 6, False), 1, 0.0)]
+        agent.update(episode)
+        agent.set_exploration_metric(lambda a: 42.0)
+        assert agent.get_exploration_signal() == 42.0
+
+    def test_custom_metric_receives_agent(self):
+        agent = BlackjackAgent(epsilon=0.1)
+        episode = [((18, 6, False), 1, 0.0)]
+        agent.update(episode)
+        agent.set_exploration_metric(lambda a: float(len(a.returns_count)))
+        assert agent.get_exploration_signal() == 1.0
