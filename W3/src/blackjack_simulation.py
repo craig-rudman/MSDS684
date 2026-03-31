@@ -51,32 +51,26 @@ class BlackjackSimulation:
         }
         window = min(5000, self.num_episodes // 10)
 
-        fig = self.viz.plot_bakeoff_curves(reward_series, window_size=window)
-        self.viz.save_plot(fig, os.path.join(self.output_dir,
-                                              "bakeoff_learning_curves.png"))
+        self.viz.plot_bakeoff_curves(
+            reward_series, window_size=window,
+            save_path=os.path.join(self.output_dir, "bakeoff_learning_curves.png"))
 
-        # Outcome breakdown
-        fig = self.viz.plot_outcome_breakdown(reward_series)
-        self.viz.save_plot(fig, os.path.join(self.output_dir,
-                                              "outcome_breakdown.png"))
+        self.viz.plot_outcome_breakdown(
+            reward_series,
+            save_path=os.path.join(self.output_dir, "outcome_breakdown.png"))
 
-        # MC agent learning curve
-        fig = self.viz.plot_learning_curve(mc_rewards, window_size=window,
-                                           show_ci=True)
-        self.viz.save_plot(fig, os.path.join(self.output_dir,
-                                              "mc_learning_curve.png"))
+        self.viz.plot_learning_curve(
+            mc_rewards, window_size=window, show_ci=True,
+            save_path=os.path.join(self.output_dir, "mc_learning_curve.png"))
 
-        # Value surface plots
         value_fn = mc_agent.get_value_function()
-        fig = self.viz.plot_value_surface(value_fn, "Value Function (Usable Ace)",
-                                          usable_ace=True)
-        self.viz.save_plot(fig, os.path.join(self.output_dir,
-                                              "value_surface_usable_ace.png"))
+        self.viz.plot_value_surface(
+            value_fn, "Value Function (Usable Ace)", usable_ace=True,
+            save_path=os.path.join(self.output_dir, "value_surface_usable_ace.png"))
 
-        fig = self.viz.plot_value_surface(value_fn, "Value Function (No Usable Ace)",
-                                          usable_ace=False)
-        self.viz.save_plot(fig, os.path.join(self.output_dir,
-                                              "value_surface_no_usable_ace.png"))
+        self.viz.plot_value_surface(
+            value_fn, "Value Function (No Usable Ace)", usable_ace=False,
+            save_path=os.path.join(self.output_dir, "value_surface_no_usable_ace.png"))
 
 
 def parse_args(argv=None):

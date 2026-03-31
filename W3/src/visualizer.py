@@ -9,7 +9,8 @@ class Visualizer:
     """Visualization tools for Blackjack MC control results."""
 
     def plot_value_surface(self, value_function: dict, title: str,
-                           usable_ace: bool = True) -> Figure:
+                           usable_ace: bool = True,
+                           save_path: str = None) -> Figure:
         """3D surface plot of the state-value function.
 
         Args:
@@ -39,6 +40,8 @@ class Visualizer:
                   rotation=90, va="center", fontsize=10)
         ax.set_title(title)
         ax.view_init(elev=25, azim=-135)
+        if save_path:
+            self.save_plot(fig, save_path)
         return fig
 
     def _rolling_stats(self, rewards, window_size):
@@ -64,7 +67,8 @@ class Visualizer:
             ax.fill_between(x, mean - ci, mean + ci, alpha=0.2)
 
     def plot_learning_curve(self, rewards: list, window_size: int = 1000,
-                            show_ci: bool = False) -> Figure:
+                            show_ci: bool = False,
+                            save_path: str = None) -> Figure:
         """Smoothed average returns over episodes.
 
         Args:
@@ -85,9 +89,11 @@ class Visualizer:
                          xy=(0.99, 0.01), xycoords="axes fraction",
                          ha="right", va="bottom", fontsize=8, fontstyle="italic",
                          color="gray")
+        if save_path:
+            self.save_plot(fig, save_path)
         return fig
 
-    def plot_bakeoff(self, results: dict) -> Figure:
+    def plot_bakeoff(self, results: dict, save_path: str = None) -> Figure:
         """Bar chart comparing average returns across agents.
 
         Args:
@@ -107,12 +113,15 @@ class Visualizer:
         ax.set_ylabel("Average Return")
         ax.set_title("Agent Bake-Off")
         ax.axhline(y=0, color="black", linewidth=0.5)
+        if save_path:
+            self.save_plot(fig, save_path)
         return fig
 
     def plot_bakeoff_curves(self, reward_series: dict,
                              window_size: int = 1000,
                              show_ci: bool = True,
-                             title: str = "Agent Bake-Off: Learning Curves") -> Figure:
+                             title: str = "Agent Bake-Off: Learning Curves",
+                             save_path: str = None) -> Figure:
         """Overlay rolling-average learning curves for multiple agents.
 
         Args:
@@ -125,7 +134,9 @@ class Visualizer:
             matplotlib Figure.
         """
         fig, ax = plt.subplots(figsize=(10, 5))
-        for name, rewards in reward_series.items():
+        sorted_series = sorted(reward_series.items(),
+                                key=lambda x: np.mean(x[1]), reverse=True)
+        for name, rewards in sorted_series:
             self._plot_curve(ax, rewards, window_size, label=name, show_ci=show_ci)
         ax.set_xlabel("Episode")
         ax.set_ylabel(f"Average Return (window={window_size})")
@@ -136,9 +147,12 @@ class Visualizer:
                          xy=(0.99, 0.01), xycoords="axes fraction",
                          ha="right", va="bottom", fontsize=8, fontstyle="italic",
                          color="gray")
+        if save_path:
+            self.save_plot(fig, save_path)
         return fig
 
-    def plot_outcome_breakdown(self, reward_series: dict) -> Figure:
+    def plot_outcome_breakdown(self, reward_series: dict,
+                                save_path: str = None) -> Figure:
         """Stacked bar chart showing win/loss/draw proportions per agent.
 
         Args:
@@ -168,6 +182,8 @@ class Visualizer:
         ax.set_title("Outcome Breakdown")
         handles, labels = ax.get_legend_handles_labels()
         ax.legend(handles[::-1], labels[::-1])
+        if save_path:
+            self.save_plot(fig, save_path)
         return fig
 
     def save_plot(self, fig: Figure, path: str) -> None:
