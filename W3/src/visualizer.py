@@ -30,16 +30,19 @@ class Visualizer:
             for j, dealer_card in enumerate(dealer_range):
                 Z[i, j] = value_function.get((player_sum, dealer_card, usable_ace), 0.0)
 
-        fig = plt.figure(figsize=(12, 8))
+        fig = plt.figure( figsize=(12, 8) )
         ax = fig.add_subplot(111, projection="3d")
-        ax.plot_surface(X, Y, Z, cmap="viridis", edgecolor="none")
+        surf = ax.plot_surface(X, Y, Z, cmap="viridis", edgecolor="none")
         ax.set_xlabel("Dealer Showing", labelpad=10)
         ax.set_ylabel("Player Sum", labelpad=10)
         ax.set_zlabel("")
         ax.text2D(-0.05, 0.5, "Value", transform=ax.transAxes,
                   rotation=90, va="center", fontsize=10)
         ax.set_title(title)
+        # ax.set_box_aspect([1, 1, 0.5])
         ax.view_init(elev=25, azim=-135)
+        cbar = fig.colorbar(surf, ax=ax, shrink=0.5, aspect=10, pad=0.1)
+        cbar.set_label("Expected Value", fontsize=9)
         if save_path:
             self.save_plot(fig, save_path)
         return fig
@@ -58,11 +61,16 @@ class Visualizer:
         ci = 1.96 * rolling_std / np.sqrt(effective_window)
         return mean, ci
 
+    _BASELINE_NAMES = {"BasicStrategy", "NaiveAgent", "NaiveRandom",
+                       "NaiveAlwaysHit", "NaiveAlwaysStick"}
+
     def _plot_curve(self, ax, rewards, window_size, label=None, show_ci=False):
         """Plot a single rolling-average curve with optional CI band."""
         mean, ci = self._rolling_stats(rewards, window_size)
         x = np.arange(len(mean))
-        ax.plot(x, mean, label=label)
+        is_baseline = label in self._BASELINE_NAMES
+        linestyle = "--" if is_baseline else "-"
+        ax.plot(x, mean, label=label, linestyle=linestyle)
         if show_ci:
             ax.fill_between(x, mean - ci, mean + ci, alpha=0.2)
 
