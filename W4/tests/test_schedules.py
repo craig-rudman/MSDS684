@@ -12,6 +12,11 @@ class TestConstantSchedule:
         s = ConstantSchedule(epsilon=0.25)
         assert s.value == 0.25
 
+    def test_reset_preserves_value(self, constant_schedule):
+        constant_schedule.step()
+        constant_schedule.reset()
+        assert constant_schedule.value == 0.1
+
 
 class TestLinearDecaySchedule:
     def test_initial_value(self, linear_schedule):
@@ -37,6 +42,12 @@ class TestLinearDecaySchedule:
             s.step()
         assert all(values[i] >= values[i + 1] for i in range(len(values) - 1))
 
+    def test_reset_restores_initial_value(self, linear_schedule):
+        for _ in range(100):
+            linear_schedule.step()
+        linear_schedule.reset()
+        assert linear_schedule.value == 1.0
+
 
 class TestExponentialDecaySchedule:
     def test_initial_value(self, exp_schedule):
@@ -60,6 +71,12 @@ class TestExponentialDecaySchedule:
         assert s.value == pytest.approx(0.5)
         s.step()
         assert s.value == pytest.approx(0.25)
+
+    def test_reset_restores_initial_value(self, exp_schedule):
+        for _ in range(100):
+            exp_schedule.step()
+        exp_schedule.reset()
+        assert exp_schedule.value == 1.0
 
 
 import pytest

@@ -11,16 +11,23 @@ class EpsilonSchedule(ABC):
     def step(self) -> None:
         pass
 
+    @abstractmethod
+    def reset(self) -> None:
+        pass
+
 
 class ConstantSchedule(EpsilonSchedule):
     def __init__(self, epsilon: float):
-        pass
+        self._epsilon = epsilon
 
     @property
     def value(self) -> float:
-        pass
+        return self._epsilon
 
     def step(self) -> None:
+        pass
+
+    def reset(self) -> None:
         pass
 
 
@@ -35,6 +42,9 @@ class LinearDecaySchedule(EpsilonSchedule):
     def step(self) -> None:
         pass
 
+    def reset(self) -> None:
+        pass
+
 
 class ExponentialDecaySchedule(EpsilonSchedule):
     def __init__(self, epsilon_start: float, decay_rate: float):
@@ -45,4 +55,7 @@ class ExponentialDecaySchedule(EpsilonSchedule):
         pass
 
     def step(self) -> None:
+        pass
+
+    def reset(self) -> None:
         pass
