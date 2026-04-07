@@ -1,7 +1,0 @@
-label,final_performance,learning_speed,sample_efficiency
-SARSA Constant(0.1),-24.532,98,-51.7426
-Q-Learning Constant(0.1),-51.16266666666667,47,-70.2474
-SARSA LinearDecay,-20.072666666666667,42,-2602.8156
-Q-Learning LinearDecay,-34.234,53,-3928.6203333333333
-SARSA ExponentialDecay,-21.938,11,-1270.882
-Q-Learning ExponentialDecay,-46.116,14,-1842.4333333333334

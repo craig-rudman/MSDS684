@@ -5,7 +5,7 @@ from environment import EnvironmentManager
 
 GRID_ROWS = 4
 GRID_COLS = 12
-ACTION_ARROWS = {0: (0, -1), 1: (1, 0), 2: (0, 1), 3: (-1, 0)}  # up, right, down, left
+ACTION_ARROWS = {0: (0, 1), 1: (1, 0), 2: (0, -1), 3: (-1, 0)}  # up, right, down, left
 
 
 class Visualizer:
@@ -33,7 +33,7 @@ class Visualizer:
         ax.set_xlabel('Episode')
         ax.set_ylabel('Mean Episode Return')
         ax.set_title(title)
-        ax.legend()
+        ax.legend(loc='center left', bbox_to_anchor=(1.0, 0.5))
         if results:
             # Build annotation from parameters constant across all results
             configs = [r.config for r in results]
@@ -57,8 +57,9 @@ class Visualizer:
                     bbox=dict(boxstyle='round', facecolor='white', alpha=0.7))
         elif ylim:
             ax.set_ylim(ylim)
+        fig.tight_layout()
         if output_dir:
-            fig.savefig(os.path.join(output_dir, f'{filename}.png'))
+            fig.savefig(os.path.join(output_dir, f'{filename}.png'), bbox_inches='tight')
 
     def plot_policy_arrows(self, q_table: np.ndarray, label: str = '', output_dir: str = None) -> None:
         fig, ax = plt.subplots(figsize=(12, 4))
@@ -87,6 +88,41 @@ class Visualizer:
         ax.set_title(f'Value Heatmap: {label}')
         if output_dir:
             fig.savefig(os.path.join(output_dir, f'value_heatmap_{label}.png'))
+
+    def plot_trajectory_comparison(self, results: list, output_dir: str = None) -> None:
+        colors = ['steelblue', 'darkorange', 'green', 'purple']
+        fig, ax = plt.subplots(figsize=(12, 4))
+        # draw grid
+        for row in range(GRID_ROWS):
+            for col in range(GRID_COLS):
+                ax.add_patch(plt.Rectangle((col - 0.5, GRID_ROWS - 1 - row - 0.5), 1, 1,
+                                           fill=False, edgecolor='gray'))
+        # mark cliff
+        for col in range(1, GRID_COLS - 1):
+            ax.add_patch(plt.Rectangle((col - 0.5, -0.5), 1, 1, color='red', alpha=0.3))
+        # mark start and goal
+        ax.text(0, 0, 'S', ha='center', va='center', fontsize=10, fontweight='bold')
+        ax.text(GRID_COLS - 1, 0, 'G', ha='center', va='center', fontsize=10, fontweight='bold')
+        # draw one greedy path per result
+        for result, color in zip(results, colors):
+            state = self.env.reset(seed=0)
+            path = [state]
+            for _ in range(500):
+                action = int(np.argmax(result.q_table[state]))
+                state, _, terminated, truncated = self.env.step(action)
+                path.append(state)
+                if terminated or truncated:
+                    break
+            cols = [s % GRID_COLS for s in path]
+            rows = [GRID_ROWS - 1 - s // GRID_COLS for s in path]
+            ax.plot(cols, rows, '-o', color=color, markersize=4, label=result.config.label)
+        ax.set_xlim(-0.5, GRID_COLS - 0.5)
+        ax.set_ylim(-0.5, GRID_ROWS - 0.5)
+        ax.set_title('Greedy Trajectories: SARSA vs Q-Learning')
+        ax.set_aspect('equal')
+        ax.legend(loc='upper left')
+        if output_dir:
+            fig.savefig(os.path.join(output_dir, 'trajectory_comparison.png'), bbox_inches='tight')
 
     def plot_trajectory(self, q_table: np.ndarray, label: str = '', output_dir: str = None) -> None:
         # Roll out greedy policy from start state
