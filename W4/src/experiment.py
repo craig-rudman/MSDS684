@@ -45,6 +45,23 @@ class ExperimentResult:
         # Mean reward across all episodes and seeds -- normalized AUC
         return float(np.mean(self.reward_matrix))
 
+    def performance_index(self, w_final: float = 0.5, w_speed: float = 0.2, w_efficiency: float = 0.3,
+                          ranges: dict = None) -> float:
+        # Normalized weighted composite: higher is better
+        # ranges: dict with keys 'final', 'speed', 'efficiency', each a (min, max) tuple
+        fp = self.final_performance()
+        ls = self.learning_speed()
+        se = self.sample_efficiency()
+        if ranges:
+            def norm(val, lo, hi):
+                return (val - lo) / (hi - lo) if hi != lo else 0.0
+            fp_norm = norm(fp, *ranges['final'])
+            ls_norm = 1.0 - norm(ls, *ranges['speed'])   # lower episode count is better
+            se_norm = norm(se, *ranges['efficiency'])
+        else:
+            fp_norm, ls_norm, se_norm = fp, float(-ls), se
+        return float(w_final * fp_norm + w_speed * ls_norm + w_efficiency * se_norm)
+
     def save(self, output_dir: str) -> None:
         path = os.path.join(output_dir, f"{self.config.label}.npy")
         np.save(path, self.reward_matrix)
@@ -71,7 +88,9 @@ class ExperimentSuite:
             self.results.append(ExperimentResult(config, matrix, q_table=agent.Q.copy()))
         return self.results
 
-    def summarize(self, output_path: str = None) -> pd.DataFrame:
+    def summarize(self, output_path: str = None, weights: dict = None,
+                  sort_by: str = None, ascending: bool = True) -> pd.DataFrame:
+        # weights: {'final_performance': float, 'learning_speed': float, 'sample_efficiency': float}
         rows = [
             {
                 'label':              r.config.label,
@@ -82,6 +101,23 @@ class ExperimentSuite:
             for r in self.results
         ]
         df = pd.DataFrame(rows)
+        if weights is not None:
+            w_final      = weights.get('final_performance', 0.5)
+            w_speed      = weights.get('learning_speed', 0.2)
+            w_efficiency = weights.get('sample_efficiency', 0.3)
+            ranges = {
+                'final':      (df['final_performance'].min(), df['final_performance'].max()),
+                'speed':      (df['learning_speed'].min(),    df['learning_speed'].max()),
+                'efficiency': (df['sample_efficiency'].min(), df['sample_efficiency'].max()),
+            }
+            df['performance_index'] = [
+                r.performance_index(w_final, w_speed, w_efficiency, ranges)
+                for r in self.results
+            ]
+        if sort_by is not None:
+            if sort_by not in df.columns:
+                raise ValueError(f"sort_by column '{sort_by}' not in DataFrame; available: {list(df.columns)}")
+            df = df.sort_values(sort_by, ascending=ascending).reset_index(drop=True)
         if output_path:
             df.to_csv(output_path, index=False)
         return df

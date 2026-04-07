@@ -12,7 +12,7 @@ class Visualizer:
     def __init__(self, env_manager: EnvironmentManager):
         self.env = env_manager
 
-    def plot_learning_curves(self, results: list, output_dir: str = None, ylim: tuple = None, smooth_window: int = None) -> None:
+    def plot_learning_curves(self, results: list, output_dir: str = None, ylim: tuple = None, smooth_window: int = None, filename: str = 'learning_curves', title: str = 'Learning Curves') -> None:
         def _smooth(arr):
             kernel = np.ones(smooth_window) / smooth_window
             return np.convolve(arr, kernel, mode='valid')
@@ -32,16 +32,33 @@ class Visualizer:
             ax.fill_between(episodes, mean - ci, mean + ci, alpha=0.2)
         ax.set_xlabel('Episode')
         ax.set_ylabel('Mean Episode Return')
-        title = 'Learning Curves with 95% CI'
-        if smooth_window:
-            title += f' (smoothed, window={smooth_window})'
-        if ylim:
-            ax.set_ylim(ylim)
-            title += f' (y clipped to {ylim})'
         ax.set_title(title)
         ax.legend()
+        if results:
+            # Build annotation from parameters constant across all results
+            configs = [r.config for r in results]
+            alphas   = set(c.alpha for c in configs)
+            scheds   = set(type(c.epsilon_schedule).__name__ for c in configs)
+            seeds    = set(c.n_seeds for c in configs)
+            alpha_str = f'α={next(iter(alphas))}' if len(alphas) == 1 else 'α=varied'
+            sched_str = f'ε={next(iter(scheds))}' if len(scheds) == 1 else 'ε=varied'
+            seeds_str = f'seeds={next(iter(seeds))}' if len(seeds) == 1 else 'seeds=varied'
+            info_line1 = f'{alpha_str} | {sched_str} | {seeds_str}'
+            info_line2_parts = []
+            if smooth_window:
+                info_line2_parts.append(f'smoothed window={smooth_window}')
+            if ylim:
+                ax.set_ylim(ylim)
+                info_line2_parts.append(f'y clipped to {ylim}')
+            info_line2_parts.append('95% CI shaded')
+            info = info_line1 + '\n' + ' | '.join(info_line2_parts)
+            ax.text(0.98, 0.05, info, transform=ax.transAxes,
+                    ha='right', va='bottom', fontsize=8,
+                    bbox=dict(boxstyle='round', facecolor='white', alpha=0.7))
+        elif ylim:
+            ax.set_ylim(ylim)
         if output_dir:
-            fig.savefig(os.path.join(output_dir, 'learning_curves.png'))
+            fig.savefig(os.path.join(output_dir, f'{filename}.png'))
 
     def plot_policy_arrows(self, q_table: np.ndarray, label: str = '', output_dir: str = None) -> None:
         fig, ax = plt.subplots(figsize=(12, 4))
