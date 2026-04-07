@@ -1,20 +1,102 @@
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 from environment import EnvironmentManager
 
+GRID_ROWS = 4
+GRID_COLS = 12
+ACTION_ARROWS = {0: (0, -1), 1: (1, 0), 2: (0, 1), 3: (-1, 0)}  # up, right, down, left
+
 
 class Visualizer:
     def __init__(self, env_manager: EnvironmentManager):
-        pass
+        self.env = env_manager
 
-    def plot_learning_curves(self, results: list, output_dir: str = None) -> None:
-        pass
+    def plot_learning_curves(self, results: list, output_dir: str = None, ylim: tuple = None, smooth_window: int = None) -> None:
+        def _smooth(arr):
+            kernel = np.ones(smooth_window) / smooth_window
+            return np.convolve(arr, kernel, mode='valid')
+
+        fig, ax = plt.subplots(figsize=(10, 5))
+        for result in results:
+            matrix = result.reward_matrix
+            n_seeds = matrix.shape[0]
+            episodes = np.arange(matrix.shape[1])
+            mean = np.mean(matrix, axis=0)
+            ci = 1.96 * np.std(matrix, axis=0) / np.sqrt(n_seeds)
+            if smooth_window:
+                mean = _smooth(mean)
+                ci   = _smooth(ci)
+                episodes = episodes[:len(mean)]
+            ax.plot(episodes, mean, label=result.config.label)
+            ax.fill_between(episodes, mean - ci, mean + ci, alpha=0.2)
+        ax.set_xlabel('Episode')
+        ax.set_ylabel('Mean Episode Return')
+        title = 'Learning Curves with 95% CI'
+        if smooth_window:
+            title += f' (smoothed, window={smooth_window})'
+        if ylim:
+            ax.set_ylim(ylim)
+            title += f' (y clipped to {ylim})'
+        ax.set_title(title)
+        ax.legend()
+        if output_dir:
+            fig.savefig(os.path.join(output_dir, 'learning_curves.png'))
 
     def plot_policy_arrows(self, q_table: np.ndarray, label: str = '', output_dir: str = None) -> None:
-        pass
+        fig, ax = plt.subplots(figsize=(12, 4))
+        for state in range(GRID_ROWS * GRID_COLS):
+            row, col = divmod(state, GRID_COLS)
+            action = np.argmax(q_table[state])
+            dx, dy = ACTION_ARROWS[action]
+            ax.annotate('', xy=(col + dx * 0.3, GRID_ROWS - 1 - row + dy * 0.3),
+                        xytext=(col, GRID_ROWS - 1 - row),
+                        arrowprops=dict(arrowstyle='->', color='black'))
+        # mark cliff
+        for col in range(1, GRID_COLS - 1):
+            ax.add_patch(plt.Rectangle((col - 0.5, -0.5), 1, 1, color='red', alpha=0.3))
+        ax.set_xlim(-0.5, GRID_COLS - 0.5)
+        ax.set_ylim(-0.5, GRID_ROWS - 0.5)
+        ax.set_title(f'Policy Arrows: {label}')
+        ax.set_aspect('equal')
+        if output_dir:
+            fig.savefig(os.path.join(output_dir, f'policy_arrows_{label}.png'))
 
     def plot_value_heatmap(self, q_table: np.ndarray, label: str = '', output_dir: str = None) -> None:
-        pass
+        values = np.max(q_table, axis=1).reshape(GRID_ROWS, GRID_COLS)
+        fig, ax = plt.subplots(figsize=(12, 4))
+        im = ax.imshow(values, cmap='viridis', aspect='auto')
+        fig.colorbar(im, ax=ax, label='Max Q-value')
+        ax.set_title(f'Value Heatmap: {label}')
+        if output_dir:
+            fig.savefig(os.path.join(output_dir, f'value_heatmap_{label}.png'))
 
     def plot_trajectory(self, q_table: np.ndarray, label: str = '', output_dir: str = None) -> None:
-        pass
+        # Roll out greedy policy from start state
+        state = self.env.reset(seed=0)
+        path = [state]
+        for _ in range(200):
+            action = int(np.argmax(q_table[state]))
+            state, _, terminated, truncated = self.env.step(action)
+            path.append(state)
+            if terminated or truncated:
+                break
+        fig, ax = plt.subplots(figsize=(12, 4))
+        # draw grid
+        for row in range(GRID_ROWS):
+            for col in range(GRID_COLS):
+                ax.add_patch(plt.Rectangle((col - 0.5, GRID_ROWS - 1 - row - 0.5), 1, 1,
+                                           fill=False, edgecolor='gray'))
+        # mark cliff
+        for col in range(1, GRID_COLS - 1):
+            ax.add_patch(plt.Rectangle((col - 0.5, -0.5), 1, 1, color='red', alpha=0.3))
+        # draw path
+        cols = [s % GRID_COLS for s in path]
+        rows = [GRID_ROWS - 1 - s // GRID_COLS for s in path]
+        ax.plot(cols, rows, 'b-o', markersize=4)
+        ax.set_xlim(-0.5, GRID_COLS - 0.5)
+        ax.set_ylim(-0.5, GRID_ROWS - 0.5)
+        ax.set_title(f'Trajectory: {label}')
+        ax.set_aspect('equal')
+        if output_dir:
+            fig.savefig(os.path.join(output_dir, f'trajectory_{label}.png'))
