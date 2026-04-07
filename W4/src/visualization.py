@@ -65,7 +65,7 @@ class Visualizer:
     def plot_value_heatmap(self, q_table: np.ndarray, label: str = '', output_dir: str = None) -> None:
         values = np.max(q_table, axis=1).reshape(GRID_ROWS, GRID_COLS)
         fig, ax = plt.subplots(figsize=(12, 4))
-        im = ax.imshow(values, cmap='viridis', aspect='auto')
+        im = ax.imshow(values, cmap='RdYlGn', interpolation='nearest')
         fig.colorbar(im, ax=ax, label='Max Q-value')
         ax.set_title(f'Value Heatmap: {label}')
         if output_dir:

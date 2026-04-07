@@ -20,9 +20,10 @@ class ExperimentConfig:
 
 
 class ExperimentResult:
-    def __init__(self, config: ExperimentConfig, reward_matrix: np.ndarray):
+    def __init__(self, config: ExperimentConfig, reward_matrix: np.ndarray, q_table: np.ndarray = None):
         self.config = config
         self.reward_matrix = reward_matrix
+        self.q_table = q_table  # trained Q-table from final seed
 
     def final_performance(self) -> float:
         # Mean reward over the last 10% of episodes across all seeds
@@ -67,7 +68,7 @@ class ExperimentSuite:
             )
             runner = EpisodeRunner(agent, self.env_manager)
             matrix = runner.run_experiment(config.n_seeds, config.n_episodes)
-            self.results.append(ExperimentResult(config, matrix))
+            self.results.append(ExperimentResult(config, matrix, q_table=agent.Q.copy()))
         return self.results
 
     def summarize(self, output_path: str = None) -> pd.DataFrame:
