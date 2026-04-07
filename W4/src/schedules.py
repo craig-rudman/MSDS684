@@ -33,29 +33,35 @@ class ConstantSchedule(EpsilonSchedule):
 
 class LinearDecaySchedule(EpsilonSchedule):
     def __init__(self, epsilon_start: float, epsilon_end: float, n_episodes: int):
-        pass
+        self._epsilon_start = epsilon_start
+        self._epsilon_end = epsilon_end
+        self._n_episodes = n_episodes
+        self._episode = 0
 
     @property
     def value(self) -> float:
-        pass
+        fraction = min(self._episode / self._n_episodes, 1.0)
+        return self._epsilon_start + fraction * (self._epsilon_end - self._epsilon_start)
 
     def step(self) -> None:
-        pass
+        self._episode += 1
 
     def reset(self) -> None:
-        pass
+        self._episode = 0
 
 
 class ExponentialDecaySchedule(EpsilonSchedule):
     def __init__(self, epsilon_start: float, decay_rate: float):
-        pass
+        self._epsilon_start = epsilon_start
+        self._decay_rate = decay_rate
+        self._episode = 0
 
     @property
     def value(self) -> float:
-        pass
+        return self._epsilon_start * (self._decay_rate ** self._episode)
 
     def step(self) -> None:
-        pass
+        self._episode += 1
 
     def reset(self) -> None:
-        pass
+        self._episode = 0
