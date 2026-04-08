@@ -95,3 +95,24 @@ class TestExperimentSuite:
         out = str(tmp_path / 'summary.csv')
         suite.summarize(output_path=out)
         assert os.path.exists(out)
+
+    def test_summarize_uses_consistent_learning_speed_threshold(self):
+        # Result A improves from -100 to -10 (crosses -75 partway through).
+        # Result B only reaches -80 (never crosses -75).
+        # summarize() must use the same threshold for both rows.
+        n_episodes = 100
+        matrix_a = np.linspace(-100, -10, n_episodes).reshape(1, n_episodes)
+        matrix_b = np.linspace(-100, -80, n_episodes).reshape(1, n_episodes)
+        result_a = ExperimentResult(make_config('A'), matrix_a)
+        result_b = ExperimentResult(make_config('B'), matrix_b)
+
+        # A crosses -75; B never does
+        assert result_a.learning_speed(threshold=-75.0) < n_episodes
+        assert result_b.learning_speed(threshold=-75.0) == n_episodes
+
+        # summarize() must report the same split
+        suite = ExperimentSuite([], None)
+        suite.results = [result_a, result_b]
+        df = suite.summarize(learning_speed_threshold=-75.0)
+        assert df[df['label'] == 'A']['learning_speed'].iloc[0] < n_episodes
+        assert df[df['label'] == 'B']['learning_speed'].iloc[0] == n_episodes

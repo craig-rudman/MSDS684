@@ -77,8 +77,8 @@ def build_alpha_configs(n_seeds: int, n_episodes: int) -> list[ExperimentConfig]
 
 def build_schedule_configs(n_seeds: int, n_episodes: int) -> list[ExperimentConfig]:
     schedules = {
-        'ε=LinearDecay':      LinearDecaySchedule(epsilon_start=1.0, epsilon_end=0.01, n_episodes=n_episodes),
-        'ε=ExponentialDecay': ExponentialDecaySchedule(epsilon_start=1.0, decay_rate=0.995),
+        'ε=LinearDecay':      LinearDecaySchedule(epsilon_start=BASELINE_EPS, epsilon_end=0.001, n_episodes=n_episodes),
+        'ε=ExponentialDecay': ExponentialDecaySchedule(epsilon_start=BASELINE_EPS, epsilon_end=0.001, n_episodes=n_episodes),
     }
     configs = []
     for label, schedule in schedules.items():
@@ -184,6 +184,7 @@ def main() -> None:
             subset, ylim=(-200, 0), smooth_window=10,
             output_dir=args.output_dir, filename=f'{agent_label}_schedule_sweep',
             title=f'{agent_label}: Effect of Epsilon Schedule',
+            show_learning_speed=True,
         )
 
     # --- Combined summary ---

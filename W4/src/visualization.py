@@ -12,7 +12,7 @@ class Visualizer:
     def __init__(self, env_manager: EnvironmentManager):
         self.env = env_manager
 
-    def plot_learning_curves(self, results: list, output_dir: str = None, ylim: tuple = None, smooth_window: int = None, filename: str = 'learning_curves', title: str = 'Learning Curves') -> None:
+    def plot_learning_curves(self, results: list, output_dir: str = None, ylim: tuple = None, smooth_window: int = None, filename: str = 'learning_curves', title: str = 'Learning Curves', show_learning_speed: bool = False, learning_speed_threshold: float = -75.0) -> None:
         def _smooth(arr):
             kernel = np.ones(smooth_window) / smooth_window
             return np.convolve(arr, kernel, mode='valid')
@@ -28,8 +28,11 @@ class Visualizer:
                 mean = _smooth(mean)
                 ci   = _smooth(ci)
                 episodes = episodes[:len(mean)]
-            ax.plot(episodes, mean, label=result.config.label)
-            ax.fill_between(episodes, mean - ci, mean + ci, alpha=0.2)
+            line, = ax.plot(episodes, mean, label=result.config.label)
+            color = line.get_color()
+            ax.fill_between(episodes, mean - ci, mean + ci, alpha=0.2, color=color)
+        if show_learning_speed and results:
+            ax.axhline(y=learning_speed_threshold, color='gray', linestyle='--', linewidth=1.0, alpha=0.8, label=f'threshold ({learning_speed_threshold})')
         ax.set_xlabel('Episode')
         ax.set_ylabel('Mean Episode Return')
         ax.set_title(title)
@@ -85,6 +88,11 @@ class Visualizer:
         fig, ax = plt.subplots(figsize=(12, 4))
         im = ax.imshow(values, cmap='RdYlGn', interpolation='nearest')
         fig.colorbar(im, ax=ax, label='Max Q-value')
+        for row in range(GRID_ROWS):
+            for col in range(GRID_COLS):
+                ax.text(col, row, f'{values[row, col]:.0f}',
+                        ha='center', va='center', fontsize=6,
+                        color='black')
         ax.set_title(f'Value Heatmap: {label}')
         if output_dir:
             fig.savefig(os.path.join(output_dir, f'value_heatmap_{label}.png'))

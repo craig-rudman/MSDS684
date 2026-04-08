@@ -26,7 +26,7 @@ def linear_schedule():
 
 @pytest.fixture
 def exp_schedule():
-    return ExponentialDecaySchedule(epsilon_start=1.0, decay_rate=0.995)
+    return ExponentialDecaySchedule(epsilon_start=1.0, epsilon_end=0.01, n_episodes=500)
 
 
 @pytest.fixture

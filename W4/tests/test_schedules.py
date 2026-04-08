@@ -66,11 +66,12 @@ class TestExponentialDecaySchedule:
         assert exp_schedule.value > 0.0
 
     def test_decay_formula(self):
-        s = ExponentialDecaySchedule(epsilon_start=1.0, decay_rate=0.5)
+        # decay_rate = (0.01/1.0)^(1/2) = 0.1, so after 1 step: 1.0*0.1=0.1, after 2: 0.01 (hits floor)
+        s = ExponentialDecaySchedule(epsilon_start=1.0, epsilon_end=0.01, n_episodes=2)
         s.step()
-        assert s.value == pytest.approx(0.5)
+        assert s.value == pytest.approx(0.1)
         s.step()
-        assert s.value == pytest.approx(0.25)
+        assert s.value == pytest.approx(0.01)
 
     def test_reset_restores_initial_value(self, exp_schedule):
         for _ in range(100):

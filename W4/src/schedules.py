@@ -51,14 +51,16 @@ class LinearDecaySchedule(EpsilonSchedule):
 
 
 class ExponentialDecaySchedule(EpsilonSchedule):
-    def __init__(self, epsilon_start: float, decay_rate: float):
+    def __init__(self, epsilon_start: float, epsilon_end: float, n_episodes: int):
         self._epsilon_start = epsilon_start
-        self._decay_rate = decay_rate
+        self._epsilon_end = epsilon_end
+        self._n_episodes = n_episodes
+        self._decay_rate = (epsilon_end / epsilon_start) ** (1.0 / n_episodes)
         self._episode = 0
 
     @property
     def value(self) -> float:
-        return self._epsilon_start * (self._decay_rate ** self._episode)
+        return max(self._epsilon_start * (self._decay_rate ** self._episode), self._epsilon_end)
 
     def step(self) -> None:
         self._episode += 1
