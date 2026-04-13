@@ -4,13 +4,15 @@ from __future__ import annotations
 class EpisodeRunner:
     """Runs a single episode and returns the step count."""
 
-    def __init__(self, env, agent, recorder=None, seed=None) -> None:
+    def __init__(self, env, agent, recorder=None, seed=None, start_episode: int = 0) -> None:
         self.env = env
         self.agent = agent
         self.recorder = recorder
         self.seed = seed
+        self._episode = start_episode
 
     def run_episode(self) -> int:
+        self._episode += 1
         state, _ = self.env.reset(seed=self.seed)
         action = self.agent.select_action(state)
         steps = 0
@@ -23,5 +25,7 @@ class EpisodeRunner:
             self.agent.update(state, action, reward, next_state, next_action, done)
             state, action = next_state, next_action
             steps += 1
+            if self.recorder:
+                self.recorder.record_step(self._episode, steps, state[0], state[1])
 
         return steps
