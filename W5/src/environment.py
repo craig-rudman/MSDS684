@@ -17,9 +17,9 @@ class MountainCarEnvironment:
         if not hasattr(self, '_env'):
             self._env = gym.make('MountainCar-v0')
 
-    def reset(self, rnd_seed=42):
-        self._env.action_space.seed(rnd_seed)
-        return self._env.reset(seed=rnd_seed)
+    def reset(self, seed=42):
+        self._env.action_space.seed(seed)
+        return self._env.reset(seed=seed)
 
     def step(self, action):
         return self._env.step(action)
