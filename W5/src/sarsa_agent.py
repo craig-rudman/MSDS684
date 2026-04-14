@@ -58,3 +58,36 @@ class SarsaAgent:
     def reset_weights(self) -> None:
         """Reset all weights to zero."""
         self.weights = np.zeros((self.n_actions, self.tile_coder.num_features))
+
+    def save(self, path: str) -> None:
+        """Persist weights and configuration to a .npz file."""
+        np.savez(
+            path,
+            weights=self.weights,
+            n_tilings=self.tile_coder.n_tilings,
+            tiles_per_dim=np.array(self.tile_coder.tiles_per_dim),
+            state_bounds=np.array(self.tile_coder.state_bounds),
+            n_actions=self.n_actions,
+            alpha=self.alpha,
+            gamma=self.gamma,
+            epsilon=self.epsilon,
+        )
+
+    @classmethod
+    def load(cls, path: str) -> SarsaAgent:
+        """Reconstruct a SarsaAgent from a .npz file produced by save()."""
+        data = np.load(path)
+        tc = TileCoder(
+            n_tilings=int(data['n_tilings']),
+            tiles_per_dim=data['tiles_per_dim'].tolist(),
+            state_bounds=[tuple(row) for row in data['state_bounds']],
+        )
+        agent = cls(
+            tc,
+            n_actions=int(data['n_actions']),
+            alpha=float(data['alpha']),
+            gamma=float(data['gamma']),
+            epsilon=float(data['epsilon']),
+        )
+        agent.weights = data['weights']
+        return agent
