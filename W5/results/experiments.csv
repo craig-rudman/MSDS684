@@ -1,6 +1,6 @@
-label,n_tilings,tiles_per_dim,num_features,n_episodes,mean_last_500,best_episode,wall_time_s
-Ex1,8,8x8,512,1500,159.2,94,26.5
-Ex2,4,8x8,256,2000,153.4,105,21.5
-Ex3,16,8x8,1024,2000,151.9,91,63.8
-Ex4,8,4x4,128,1500,168.5,141,26.9
-Ex5,8,16x16,2048,2500,155.2,93,46.9
+label,n_tilings,tiles_per_dim,num_features,n_episodes,mean_last_500,best_episode,wall_time_s,mean_success_rate
+Ex1,8,8x8,512,2500,152.6,90,42.1,90.4
+Ex2,4,8x8,256,2500,151.4,106,26.0,88.0
+Ex3,16,8x8,1024,2500,149.2,91,76.4,92.0
+Ex4,8,4x4,128,2500,165.7,114,46.0,84.7
+Ex5,8,16x16,2048,2500,152.4,91,45.3,65.9
