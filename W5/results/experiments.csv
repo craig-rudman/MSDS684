@@ -1,0 +1,5 @@
+label,n_tilings,tiles_per_dim,num_features,n_episodes,mean_last_500,best_episode,wall_time_s
+Ex2,4,8x8,256,2000,153.8,98,21.6
+Ex3,16,8x8,1024,1500,153.5,90,48.0
+Ex4,8,4x4,128,1000,163.1,119,18.1
+Ex5,8,16x16,2048,2500,155.2,91,49.0

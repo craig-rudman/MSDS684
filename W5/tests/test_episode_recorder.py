@@ -91,6 +91,29 @@ class TestEpisodeRecorderReset:
         assert len(rows) == 1
 
 
+class TestEpisodeRecorderExperimentLabel:
+    def test_header_includes_experiment_column(self, csv_path):
+        with EpisodeRecorder(csv_path, experiment='Ex1') as rec:
+            rec.record_step(1, 0, -0.5, 0.0)
+        with open(csv_path) as f:
+            header = next(csv.reader(f))
+        assert header == ['experiment', 'episode', 'step', 'position', 'velocity']
+
+    def test_row_includes_experiment_label(self, csv_path):
+        with EpisodeRecorder(csv_path, experiment='Ex2') as rec:
+            rec.record_step(1, 0, -0.5, 0.0)
+        with open(csv_path) as f:
+            rows = list(csv.reader(f))
+        assert rows[1][0] == 'Ex2'
+
+    def test_no_experiment_preserves_original_header(self, csv_path):
+        with EpisodeRecorder(csv_path) as rec:
+            rec.record_step(1, 0, -0.5, 0.0)
+        with open(csv_path) as f:
+            header = next(csv.reader(f))
+        assert header == ['episode', 'step', 'position', 'velocity']
+
+
 class TestEpisodeRecorderContextManager:
     def test_context_manager_closes_file(self, csv_path):
         with EpisodeRecorder(csv_path) as rec:
