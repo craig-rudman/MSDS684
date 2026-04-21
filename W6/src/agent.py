@@ -60,6 +60,9 @@ class Agent:
             gamma=gamma, act_low=act_low, act_high=act_high,
         )
 
+    def get_value(self, obs):
+        return self.critic(obs)
+
     def select_action(self, obs):
         mu, log_std = self.actor(obs)
         dist = Normal(mu, log_std.exp())
@@ -84,7 +87,8 @@ class Agent:
         actor_loss.backward()
         self.actor_optimizer.step()
 
-        return {"actor_loss": actor_loss.item(), "critic_loss": critic_loss.item()}
+        return {"actor_loss": actor_loss.item(), "critic_loss": critic_loss.item(),
+                "td_error": delta.item()}
 
     def save(self, path):
         torch.save({"config": self._config,
