@@ -1,13 +1,24 @@
 import torch
 import torch.nn as nn
 
-def _mlp_body(input_dim, hidden_sizes, activation=nn.Tanh):
+def _mlp_body(input_dim, hidden_sizes, activation=nn.ReLU):
     layers = []
     in_dim = input_dim
     for h in hidden_sizes:
         layers += [nn.Linear(in_dim, h), activation()]
         in_dim = h
     return nn.Sequential(*layers)
+
+
+class Critic(nn.Module):
+
+    def __init__(self, obs_dim, hidden_sizes=(64, 64)):
+        super().__init__()
+        self.trunk = _mlp_body(obs_dim, hidden_sizes)
+        self.value_head = nn.Linear(hidden_sizes[-1], 1)
+
+    def forward(self, obs):
+        return self.value_head(self.trunk(obs)).squeeze(-1)
 
 
 class Actor(nn.Module):

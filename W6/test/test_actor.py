@@ -80,10 +80,8 @@ class TestActorSigmaMode:
 
     def test_head_log_std_state_dependent(self, actor_head):
         torch.manual_seed(0)
-        actor_head.apply(lambda m: (torch.nn.init.normal_(m.weight, std=1.0)
-                                    if hasattr(m, 'weight') else None))
-        obs1 = torch.zeros(OBS_DIM)
-        obs2 = torch.ones(OBS_DIM) * 10.0
+        obs1 = torch.randn(OBS_DIM)
+        obs2 = torch.randn(OBS_DIM)
         _, log_std1 = actor_head(obs1)
         _, log_std2 = actor_head(obs2)
         assert not torch.allclose(log_std1, log_std2)
