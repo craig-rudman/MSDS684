@@ -65,9 +65,10 @@ class Agent:
         dist = Normal(mu, log_std.exp())
         action = dist.sample()
         log_prob = dist.log_prob(action).sum(dim=-1)
+        entropy = dist.entropy().sum(dim=-1)
         action = torch.clamp(action, self.act_low, self.act_high)
         value = self.critic(obs)
-        return action, log_prob, value
+        return action, log_prob, value, entropy
 
     def update(self, log_prob, value, next_value, reward, done):
         target = reward + self.gamma * next_value.detach() * (1 - float(done))
