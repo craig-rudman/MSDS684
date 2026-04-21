@@ -35,10 +35,15 @@ def agent(env):
     )
 
 
+TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "test_runs")
+
+
 @pytest.fixture
 def trainer(agent, env):
     from src.trainer import Trainer
-    return Trainer(agent, env, label=LABEL)
+    t = Trainer(agent, env, label=LABEL)
+    t.data_dir = TEST_DATA_DIR
+    return t
 
 
 @pytest.fixture
