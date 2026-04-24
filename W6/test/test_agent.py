@@ -95,7 +95,7 @@ class TestAgentUpdate:
         assert any(not torch.equal(b, a) for b, a in zip(params_before, params_after))
 
     def test_done_zeroes_next_value(self, agent, obs):
-        _, log_prob, value = agent.select_action(obs)[:3]
+        _, log_prob, value, _ = agent.select_action(obs)
         value_scalar = value.item()
         large_next_value = torch.tensor(1000.0)
         result = agent.update(log_prob, value, large_next_value, reward=1.0, done=True)

@@ -12,7 +12,7 @@ def _mlp_body(input_dim, hidden_sizes, activation=nn.ReLU):
 
 
 class Critic(nn.Module):
-    def __init__(self, obs_dim, hidden_sizes=(64, 64)):
+    def __init__(self, obs_dim, hidden_sizes=(128, 128)):
         super().__init__()
         self.trunk = _mlp_body(obs_dim, hidden_sizes)
         self.value_head = nn.Linear(hidden_sizes[-1], 1)
@@ -22,34 +22,27 @@ class Critic(nn.Module):
 
 
 class Actor(nn.Module):
-    def __init__(self, obs_dim, act_dim, hidden_sizes=(64, 64), state_dependent_std=False):
+    def __init__(self, obs_dim, act_dim, hidden_sizes=(128, 128)):
         super().__init__()
-        self.state_dependent_std = state_dependent_std
         self.trunk = _mlp_body(obs_dim, hidden_sizes)
         self.mu_head = nn.Linear(hidden_sizes[-1], act_dim)
-        if state_dependent_std:
-            self.log_std_head = nn.Linear(hidden_sizes[-1], act_dim)
-        else:
-            self.log_std = nn.Parameter(torch.zeros(act_dim))
+        self.log_std = nn.Parameter(torch.zeros(act_dim))
 
     def forward(self, obs):
-        features = self.trunk(obs)
-        mu = self.mu_head(features)
-        if self.state_dependent_std:
-            log_std = self.log_std_head(features).clamp(-20, 2)
-        else:
-            log_std = self.log_std.expand_as(mu).clamp(-20, 2)
+        mu = self.mu_head(self.trunk(obs))
+        log_std = self.log_std.expand_as(mu).clamp(-20, 2)
         return mu, log_std
 
 
 class Agent:
-    def __init__(self, obs_dim, act_dim, actor_lr, critic_lr, gamma, act_low, act_high):
+    def __init__(self, obs_dim, act_dim, actor_lr, critic_lr, gamma, act_low, act_high,
+                 hidden_sizes=(64, 64)):
         self.gamma = gamma
         self.act_low = act_low
         self.act_high = act_high
 
-        self.actor = Actor(obs_dim, act_dim)
-        self.critic = Critic(obs_dim)
+        self.actor = Actor(obs_dim, act_dim, hidden_sizes=hidden_sizes)
+        self.critic = Critic(obs_dim, hidden_sizes=hidden_sizes)
 
         self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=actor_lr)
         self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=critic_lr)
@@ -58,6 +51,7 @@ class Agent:
             obs_dim=obs_dim, act_dim=act_dim,
             actor_lr=actor_lr, critic_lr=critic_lr,
             gamma=gamma, act_low=act_low, act_high=act_high,
+            hidden_sizes=hidden_sizes,
         )
 
     def get_value(self, obs):

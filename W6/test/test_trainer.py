@@ -129,6 +129,24 @@ class TestTrainerSeed:
         assert df1["episode_return"].iloc[0] == df2["episode_return"].iloc[0]
 
 
+
+class TestTrainerCheckpoint:
+    def test_checkpoint_saved_when_path_provided(self, agent, env, tmp_path):
+        from src.trainer import Trainer
+        path = tmp_path / "best.pt"
+        trainer = Trainer(agent, env, label=LABEL, seed=42, checkpoint_path=str(path))
+        trainer.data_dir = str(tmp_path)
+        trainer.train(num_episodes=2)
+        assert path.exists()
+
+    def test_no_checkpoint_without_path(self, agent, env, tmp_path):
+        from src.trainer import Trainer
+        trainer = Trainer(agent, env, label=LABEL, seed=42)
+        trainer.data_dir = str(tmp_path)
+        trainer.train(num_episodes=2)
+        assert not any(tmp_path.glob("*.pt"))
+
+
 class TestTrainerCSV:
     def test_csv_written(self, trainer, tmp_path):
         trainer.data_dir = str(tmp_path)
