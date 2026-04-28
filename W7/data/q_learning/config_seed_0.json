@@ -1,0 +1,11 @@
+{
+  "agent_id": "q_learning",
+  "seed": 0,
+  "hyperparams": {
+    "alpha": 0.1,
+    "epsilon": 0.1,
+    "gamma": 0.99,
+    "num_episodes": 500
+  },
+  "timestamp_utc": "2026-04-28T03:46:44.920417+00:00"
+}
