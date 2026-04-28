@@ -7,6 +7,14 @@ class TaxiEnv:
         self._seed = seed
         self._next_reset_seed: int | None = seed
 
+    @property
+    def num_actions(self) -> int:
+        return int(self._env.action_space.n)
+
+    @property
+    def num_states(self) -> int:
+        return int(self._env.observation_space.n)
+
     def reset(self) -> int:
         if self._next_reset_seed is not None:
             obs, _info = self._env.reset(seed=self._next_reset_seed)

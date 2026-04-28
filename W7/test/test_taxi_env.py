@@ -73,3 +73,19 @@ def test_wrapper_injection_honored():
     assert 0 <= state < 500
     result = env.step(0)
     assert len(result) == 4
+
+
+def test_num_actions_is_six():
+    env = TaxiEnv()
+    assert env.num_actions == 6
+
+
+def test_num_states_is_five_hundred():
+    env = TaxiEnv()
+    assert env.num_states == 500
+
+
+def test_dimensions_available_before_reset():
+    env = TaxiEnv(seed=42)
+    assert env.num_actions == 6
+    assert env.num_states == 500
