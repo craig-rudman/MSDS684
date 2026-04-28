@@ -6,16 +6,16 @@ import seaborn as sns
 
 
 def compute_cumulative_reward(traces: pd.DataFrame) -> pd.DataFrame:
-    sorted_traces = traces.sort_values(["agent_id", "seed", "step"])
+    sorted_traces = traces.sort_values(["agent_id", "seed", "episode"])
     cumulative = (
         sorted_traces
-        .groupby(["agent_id", "seed"])["reward"]
+        .groupby(["agent_id", "seed"])["total_reward"]
         .cumsum()
     )
     return pd.DataFrame({
         "agent_id": sorted_traces["agent_id"].values,
         "seed": sorted_traces["seed"].values,
-        "step": sorted_traces["step"].values,
+        "cumulative_steps": sorted_traces["cumulative_steps"].values,
         "cumulative_reward": cumulative.values,
     })
 
@@ -25,7 +25,7 @@ def plot_cumulative_reward(traces: pd.DataFrame, output_path: Path | str) -> Non
     fig, ax = plt.subplots(figsize=(10, 6))
     sns.lineplot(
         data=data,
-        x="step",
+        x="cumulative_steps",
         y="cumulative_reward",
         hue="agent_id",
         errorbar=("ci", 95),

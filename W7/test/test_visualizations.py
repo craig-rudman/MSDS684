@@ -12,25 +12,36 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 from visualizations import compute_cumulative_reward, plot_cumulative_reward
 
 
-def make_trace(agent_id: str, seed: int, rewards: list[float]) -> pd.DataFrame:
+def make_episode_trace(agent_id: str, seed: int, total_rewards: list[float]) -> pd.DataFrame:
+    n = len(total_rewards)
+    num_steps = [10] * n
+    n_planning_updates = [0] * n
     return pd.DataFrame({
-        "agent_id": [agent_id] * len(rewards),
-        "seed": [seed] * len(rewards),
-        "step": list(range(len(rewards))),
-        "reward": rewards,
+        "agent_id": [agent_id] * n,
+        "seed": [seed] * n,
+        "episode": list(range(n)),
+        "total_reward": total_rewards,
+        "num_steps": num_steps,
+        "cumulative_steps": pd.Series(num_steps).cumsum().tolist(),
+        "terminated": [True] * n,
+        "truncated": [False] * n,
+        "wall_time_episode": [0.01] * n,
+        "wall_time_planning_episode": [0.0] * n,
+        "n_planning_updates_episode": n_planning_updates,
+        "cumulative_planning_updates": pd.Series(n_planning_updates).cumsum().tolist(),
     })
 
 
 def test_cumulative_reward_single_agent_single_seed():
-    trace = make_trace("q_learning", seed=0, rewards=[1.0, 2.0, -1.0, 5.0])
+    trace = make_episode_trace("q_learning", seed=0, total_rewards=[1.0, 2.0, -1.0, 5.0])
     result = compute_cumulative_reward(trace)
     assert list(result["cumulative_reward"]) == [1.0, 3.0, 2.0, 7.0]
 
 
 def test_cumulative_reward_single_agent_multiple_seeds():
     trace = pd.concat([
-        make_trace("q_learning", seed=0, rewards=[1.0, 1.0, 1.0]),
-        make_trace("q_learning", seed=1, rewards=[2.0, 2.0, 2.0]),
+        make_episode_trace("q_learning", seed=0, total_rewards=[1.0, 1.0, 1.0]),
+        make_episode_trace("q_learning", seed=1, total_rewards=[2.0, 2.0, 2.0]),
     ], ignore_index=True)
     result = compute_cumulative_reward(trace)
     seed0 = result[result["seed"] == 0]["cumulative_reward"].tolist()
@@ -41,8 +52,8 @@ def test_cumulative_reward_single_agent_multiple_seeds():
 
 def test_cumulative_reward_multiple_agents():
     trace = pd.concat([
-        make_trace("q_learning", seed=0, rewards=[1.0, 1.0]),
-        make_trace("dyna_q_n10", seed=0, rewards=[3.0, 3.0]),
+        make_episode_trace("q_learning", seed=0, total_rewards=[1.0, 1.0]),
+        make_episode_trace("dyna_q_n10", seed=0, total_rewards=[3.0, 3.0]),
     ], ignore_index=True)
     result = compute_cumulative_reward(trace)
     q_learning = result[result["agent_id"] == "q_learning"]["cumulative_reward"].tolist()
@@ -52,15 +63,15 @@ def test_cumulative_reward_multiple_agents():
 
 
 def test_cumulative_reward_output_schema():
-    trace = make_trace("q_learning", seed=0, rewards=[1.0, 2.0])
+    trace = make_episode_trace("q_learning", seed=0, total_rewards=[1.0, 2.0])
     result = compute_cumulative_reward(trace)
-    assert set(result.columns) == {"agent_id", "seed", "step", "cumulative_reward"}
+    assert set(result.columns) == {"agent_id", "seed", "cumulative_steps", "cumulative_reward"}
 
 
 def test_plot_cumulative_reward_writes_file(tmp_path):
     trace = pd.concat([
-        make_trace("q_learning", seed=0, rewards=[1.0, 2.0, 3.0, 4.0, 5.0]),
-        make_trace("dyna_q_n10", seed=0, rewards=[2.0, 4.0, 6.0, 8.0, 10.0]),
+        make_episode_trace("q_learning", seed=0, total_rewards=[1.0, 2.0, 3.0, 4.0, 5.0]),
+        make_episode_trace("dyna_q_n10", seed=0, total_rewards=[2.0, 4.0, 6.0, 8.0, 10.0]),
     ], ignore_index=True)
     output_path = tmp_path / "cumulative_reward.png"
     plot_cumulative_reward(trace, output_path)
