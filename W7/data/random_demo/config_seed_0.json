@@ -1,0 +1,8 @@
+{
+  "agent_id": "random_demo",
+  "seed": 0,
+  "hyperparams": {
+    "policy": "uniform_random"
+  },
+  "timestamp_utc": "2026-04-28T01:42:13.355835+00:00"
+}

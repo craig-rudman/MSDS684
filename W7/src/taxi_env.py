@@ -2,10 +2,8 @@ import gymnasium as gym
 
 
 class TaxiEnv:
-    def __init__(self, gym_env: gym.Env | None = None, seed: int | None = None):
+    def __init__(self, gym_env: gym.Env | None = None):
         self._env = gym_env if gym_env is not None else gym.make("Taxi-v4")
-        self._seed = seed
-        self._next_reset_seed: int | None = seed
 
     @property
     def num_actions(self) -> int:
@@ -15,10 +13,9 @@ class TaxiEnv:
     def num_states(self) -> int:
         return int(self._env.observation_space.n)
 
-    def reset(self) -> int:
-        if self._next_reset_seed is not None:
-            obs, _info = self._env.reset(seed=self._next_reset_seed)
-            self._next_reset_seed = None
+    def reset(self, seed: int | None = None) -> int:
+        if seed is not None:
+            obs, _info = self._env.reset(seed=seed)
         else:
             obs, _info = self._env.reset()
         return int(obs)

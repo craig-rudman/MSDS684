@@ -14,21 +14,16 @@ def test_construction_default():
     assert env is not None
 
 
-def test_construction_with_seed():
-    env = TaxiEnv(seed=42)
-    assert env is not None
-
-
 def test_reset_returns_int_in_range():
-    env = TaxiEnv(seed=42)
-    state = env.reset()
+    env = TaxiEnv()
+    state = env.reset(seed=42)
     assert isinstance(state, int)
     assert 0 <= state < 500
 
 
 def test_step_returns_four_tuple_with_correct_types():
-    env = TaxiEnv(seed=42)
-    env.reset()
+    env = TaxiEnv()
+    env.reset(seed=42)
     result = env.step(0)
     assert len(result) == 4
     state, reward, terminated, truncated = result
@@ -42,11 +37,11 @@ def test_step_returns_four_tuple_with_correct_types():
 def test_determinism_across_instances():
     actions = [0, 1, 2, 3, 4, 5, 0, 1, 2, 3] * 5
 
-    env_a = TaxiEnv(seed=42)
-    env_b = TaxiEnv(seed=42)
+    env_a = TaxiEnv()
+    env_b = TaxiEnv()
 
-    state_a = env_a.reset()
-    state_b = env_b.reset()
+    state_a = env_a.reset(seed=42)
+    state_b = env_b.reset(seed=42)
     assert state_a == state_b
 
     for action in actions:
@@ -59,16 +54,10 @@ def test_determinism_across_instances():
             assert state_a == state_b
 
 
-def test_seed_once_semantics_initial_states_vary():
-    env = TaxiEnv(seed=42)
-    initial_states = {env.reset() for _ in range(5)}
-    assert len(initial_states) > 1
-
-
 def test_wrapper_injection_honored():
     inner = gym.make("Taxi-v4")
-    env = TaxiEnv(gym_env=inner, seed=42)
-    state = env.reset()
+    env = TaxiEnv(gym_env=inner)
+    state = env.reset(seed=42)
     assert isinstance(state, int)
     assert 0 <= state < 500
     result = env.step(0)
@@ -86,6 +75,21 @@ def test_num_states_is_five_hundred():
 
 
 def test_dimensions_available_before_reset():
-    env = TaxiEnv(seed=42)
+    env = TaxiEnv()
     assert env.num_actions == 6
     assert env.num_states == 500
+
+
+def test_reset_accepts_seed_override():
+    env = TaxiEnv()
+    state_a = env.reset(seed=42)
+    env_b = TaxiEnv()
+    state_b = env_b.reset(seed=42)
+    assert state_a == state_b
+
+
+def test_reset_seed_override_is_one_shot():
+    env = TaxiEnv()
+    env.reset(seed=42)
+    initial_states = {env.reset() for _ in range(5)}
+    assert len(initial_states) > 1
