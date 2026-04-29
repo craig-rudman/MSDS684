@@ -15,9 +15,7 @@ from visualizations import (
     compute_termination_rate,
     compute_termination_rate_aggregated,
     plot_cumulative_reward,
-    plot_steps_to_reliable_termination,
     plot_termination_rate,
-    steps_to_reliable_termination,
 )
 
 
@@ -287,68 +285,3 @@ def test_plot_termination_rate_x_axis_invalid_raises(tmp_path):
         plot_termination_rate(trace, tmp_path / "x.png", x_axis="bogus")
 
 
-def test_steps_to_reliable_termination_schema():
-    trace = make_episode_trace_with_terminations(
-        "q_learning", seed=0, terminated_pattern=[False, True, True]
-    )
-    result = steps_to_reliable_termination(trace, target_rate=0.8, window=2)
-    assert set(result.columns) == {"agent_id", "seed", "steps_to_reliable_termination"}
-
-
-def test_steps_to_reliable_termination_first_crossing():
-    # window=2; trailing rate sequence: 0.0, 0.5, 1.0, 1.0, 0.5
-    # First crossing of 0.8 is at episode index 2; cumulative_steps[2] = 30.
-    trace = make_episode_trace_with_terminations(
-        "q_learning", seed=0, terminated_pattern=[False, True, True, True, False]
-    )
-    result = steps_to_reliable_termination(trace, target_rate=0.8, window=2)
-    row = result[(result["agent_id"] == "q_learning") & (result["seed"] == 0)].iloc[0]
-    assert row["steps_to_reliable_termination"] == 30
-
-
-def test_steps_to_reliable_termination_never_reached_is_nan():
-    trace = make_episode_trace_with_terminations(
-        "q_learning", seed=0, terminated_pattern=[False, False, False, False]
-    )
-    result = steps_to_reliable_termination(trace, target_rate=0.8, window=2)
-    row = result[(result["agent_id"] == "q_learning") & (result["seed"] == 0)].iloc[0]
-    assert pd.isna(row["steps_to_reliable_termination"])
-
-
-def test_plot_steps_to_reliable_termination_writes_file(tmp_path):
-    trace = pd.concat([
-        make_episode_trace_with_terminations(
-            "q_learning", seed=0, terminated_pattern=[False, True, True, True]
-        ),
-        make_episode_trace_with_terminations(
-            "q_learning", seed=1, terminated_pattern=[False, True, True, True]
-        ),
-        make_episode_trace_with_terminations(
-            "dyna_q", seed=0, terminated_pattern=[True, True, True, True]
-        ),
-        make_episode_trace_with_terminations(
-            "dyna_q", seed=1, terminated_pattern=[True, True, True, True]
-        ),
-    ], ignore_index=True)
-    output_path = tmp_path / "steps_to_reliable_termination.png"
-    plot_steps_to_reliable_termination(trace, output_path, target_rate=0.8, window=2)
-    assert output_path.exists()
-    assert output_path.stat().st_size > 0
-
-
-def test_plot_steps_to_reliable_termination_with_label_map(tmp_path):
-    trace = pd.concat([
-        make_episode_trace_with_terminations(
-            "q_learning", seed=0, terminated_pattern=[False, True, True, True]
-        ),
-        make_episode_trace_with_terminations(
-            "q_learning", seed=1, terminated_pattern=[False, True, True, True]
-        ),
-    ], ignore_index=True)
-    output_path = tmp_path / "steps_to_reliable_termination_labeled.png"
-    plot_steps_to_reliable_termination(
-        trace, output_path, target_rate=0.8, window=2,
-        label_map={"q_learning": "Q-learning"},
-    )
-    assert output_path.exists()
-    assert output_path.stat().st_size > 0
