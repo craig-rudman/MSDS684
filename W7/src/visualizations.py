@@ -103,6 +103,33 @@ def plot_cumulative_reward(
     plt.close(fig)
 
 
+def steps_to_reliable_termination(
+    traces: pd.DataFrame,
+    target_rate: float = 0.8,
+    window: int = 50,
+) -> pd.DataFrame:
+    sorted_traces = traces.sort_values(["agent_id", "seed", "episode"])
+    rolling = (
+        sorted_traces
+        .groupby(["agent_id", "seed"])["terminated"]
+        .rolling(window=window, min_periods=1)
+        .mean()
+        .reset_index(level=[0, 1], drop=True)
+    )
+    sorted_traces = sorted_traces.assign(trailing_rate=rolling.values)
+
+    rows = []
+    for (agent_id, seed), group in sorted_traces.groupby(["agent_id", "seed"]):
+        crossed = group[group["trailing_rate"] >= target_rate]
+        steps = float(crossed["cumulative_steps"].iloc[0]) if len(crossed) else float("nan")
+        rows.append({
+            "agent_id": agent_id,
+            "seed": seed,
+            "steps_to_reliable_termination": steps,
+        })
+    return pd.DataFrame(rows, columns=["agent_id", "seed", "steps_to_reliable_termination"])
+
+
 def compute_termination_rate(traces: pd.DataFrame, window: int = 50) -> pd.DataFrame:
     sorted_traces = traces.sort_values(["agent_id", "seed", "episode"])
     rolling = (

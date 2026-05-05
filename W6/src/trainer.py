@@ -80,3 +80,79 @@ class Trainer:
             self.agent.save(self.checkpoint_path)
 
         return df
+
+    def train_steps(self, total_steps):
+        config = {k: v for k, v in self.agent._config.items()
+                  if k not in ("act_low", "act_high")}
+        config["label"] = self.label
+        if self.seed is not None:
+            config["seed"] = self.seed
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+        records = []
+        global_step = 0
+        episode = 0
+        first_reset = True
+
+        pbar = tqdm(total=total_steps, desc="Training", unit="step")
+        while global_step < total_steps:
+            reset_seed = self.seed if (first_reset and self.seed is not None) else None
+            obs, _ = self.env.reset(seed=reset_seed)
+            first_reset = False
+            done = False
+            step = 0
+            episode_return = 0.0
+            episode_records = []
+
+            while not done and global_step < total_steps:
+                obs_tensor = torch.FloatTensor(obs)
+                action, log_prob, value, entropy = self.agent.select_action(obs_tensor)
+
+                next_obs, reward, terminated, truncated, _ = self.env.step(
+                    action.detach().numpy()
+                )
+                done = terminated or truncated
+                episode_return += float(reward)
+
+                next_value = (torch.tensor(0.0) if done
+                              else self.agent.get_value(torch.FloatTensor(next_obs)))
+
+                update = self.agent.update(log_prob, value, next_value, reward, done)
+
+                episode_records.append({
+                    "episode": episode,
+                    "step": step,
+                    "global_step": global_step,
+                    "reward": float(reward),
+                    "td_error": update["td_error"],
+                    "entropy": entropy.item(),
+                    "x": float(obs[0]),
+                    "y": float(obs[1]),
+                    "angle": float(obs[4]),
+                })
+
+                obs = next_obs
+                step += 1
+                global_step += 1
+                pbar.update(1)
+
+            for r in episode_records:
+                r["episode_return"] = episode_return
+                r["episode_length"] = step
+                r.update(config)
+
+            records.extend(episode_records)
+            pbar.set_postfix({"ep": episode, "return": f"{episode_return:.1f}"})
+            episode += 1
+
+        pbar.close()
+
+        df = pd.DataFrame(records)
+        os.makedirs(self.data_dir, exist_ok=True)
+        csv_path = os.path.join(self.data_dir, f"{self.label}_{timestamp}.csv")
+        df.to_csv(csv_path, index=False)
+
+        if self.checkpoint_path:
+            self.agent.save(self.checkpoint_path)
+
+        return df
